@@ -1,80 +1,50 @@
 # edpr-vojext
+EDPR@IIT's repository for the European project [VOJEXT](http://vojext.eu/).
 
-EDPR repository for the European project [VOJEXT](http://vojext.eu/).
+Online setup of the [Lifting events to 3D HPE](https://github.com/IIT-PAVIS/lifting_events_to_3d_hpe) program with a YARP input setup.
+<!-- Use the hpecore installed with OpenPose functionality to perform HPE on greyscale images streamed over YARP. -->
+
+The application has been designed to run using docker for simple set-up of the environment.
 
 ## Installation
-The software was tested on Linux Pop_OS 20.04 LTS.
+The software was tested on Ubuntu 20.04.2 LTS without GPU support.
 
+
+- Install the latest [Nvidia driver](https://github.com/NVIDIA/nvidia-docker/wiki/Frequently-Asked-Questions#how-do-i-install-the-nvidia-driver)
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu)
+- Install [Nvidia Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+
 - Download the repository and build the Docker image
     ```shell
-    $ cd /path/to/repository/folder
-    $ docker build -t edpr-vojext:v1 .
+    $ cd <workspace>
+    $ git clone git@github.com:event-driven-robotics/edpr-vojext.git
+    $ cd edpr-vojext
+    $ docker build -t vojext --ssh default --build-arg ssh_pub_key="$(cat ~/.ssh/<publicKeyFile>.pub)" --build-arg ssh_prv_key="$(cat ~/.ssh/<privateKeyFile>)" - < Dockerfile
     ```
+:bulb: `<workspace>` is the parent directory in which the repository is cloned
 
+:bulb: The ssh keys are required to for convenient access to the repositories within the Docker, some of which might be private at the time of use. [Create a new ssh key](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) if required.
+
+:warning: Ensure your ssh key is built without a passphrase.
 
 ## Usage
-- Run the Docker container and, inside it, run the pose detector
+- Run the Docker container and, inside it, run the gl-hpe pose detector
     ```shell
     $ xhost +
-    $ docker run -it -v /path/to/code/:/code/ -v /path/to/DHP19/dataset/:/data/DHP19/ -v /path/to/checkpoint/:/data/checkpoint/ edpr-vojext:v1 bash
-    $ ./launch_pose_detector.sh
+    $ docker run -it -v /tmp/.X11-unix/:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY vojext bash
     ```
-
-[comment]: <> (  The ``yarpmanager`` window will appear as shown in the figure below.)
-
-[comment]: <> (  ![image]&#40;images/yarpmanager.png&#41;)
-
-[comment]: <> (  The terminal window will show ``yarpserver``'s IP address &#40;``172.17.0.2`` in the figure below&#41;. This might be needed )
-
-[comment]: <> (  for the next step.)
-
-[comment]: <> (  ![image]&#40;images/yarpserver_ip.png&#41;)
-
-[comment]: <> (- Open the script ``launch_yarpview.sh`` and check if line ``11`` has the correct IP address of ``yarpserver`` &#40;gathered)
-
-[comment]: <> (  previously, figure below&#41;.)
-
-[comment]: <> (  If not, set the correct one.)
-
-[comment]: <> (  ![image]&#40;images/yarpview_conf.png&#41;)
   
-[comment]: <> (- Run ``yarpview`` on the local machine &#40;yarpview cannot be currently run in the Docker container; this will be fixed in)
+- At the terminal inside the container run the following commands
+  ```shell 
+  $ yarpserver &
+  $ yarpmanager
+  ```
+  :warning: the `&` runs the process in the background enabling a single terminal to run both processes.
 
-[comment]: <> (  a future release&#41;)
+- In the `yarpmanager`, load the application from `/usr/local/code/hpe-core/example/yarp-glhpe` and run all modules
 
-[comment]: <> (    ```shell)
+- In the `yarpdataplayer` GUI use the drop-down menus to load the test dataset at `/usr/local/code/hpe-core/example/test_dataset` and play
 
-[comment]: <> (    $ ./launch_yarpview.sh)
-
-[comment]: <> (    ```)
-
-[comment]: <> (  The script will also download and install locally ``yarp``.)
+- Connect all connections in the `yarpmanager` 
   
-[comment]: <> (- In the ``yarpmanager`` window, open the application menu and select the app "APRIL_WP61a_demo". The list of app )
-
-[comment]: <> (  components will be shown as in the figure above)
- 
-[comment]: <> (- Run all components by clicking on the green button ``Run all```.)
-
-[comment]: <> (- ``yarpdataplayer``'s GUI will be shown as in the figure below)
-
-[comment]: <> (  ![image]&#40;images/yarpdataplayer.png&#41;)
-
-[comment]: <> (  Select ``File->Open Directory`` and select folder ``data`` as shown in the figure below)
-
-[comment]: <> (  ![image]&#40;images/yarpdataplayer_folder.png&#41;)
-
-[comment]: <> (- Two data sources will be used, the raw events &#40;``ATIS``&#41; and the grayscale frames &#40;``yope_grey``&#41;)
-
-[comment]: <> (  ![image]&#40;images/yarpdataplayer_data.png&#41;)
-
-[comment]: <> (  Select ``Options->Repeat`` and start playing the recorded data by clicking on the ``Play`` button.)
-
-[comment]: <> (- Finally, connect all components by clicking on the green button ``Connect all`` in ``yarpmanager``'s GUI)
-
-[comment]: <> (The previously opened ``yarpview`` should now show the raw events, the grayscale frame and the overlayed 2D skeleton, as)
-
-[comment]: <> (shown in the figure below.)
-
-[comment]: <> (![image]&#40;images/yarpview_gui.png&#41;)
+- A new window should pop up and display the detected skeleton overlaid on the event frames
