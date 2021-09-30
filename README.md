@@ -10,9 +10,7 @@ The application has been designed to run using docker for simple set-up of the e
 The software was tested on Ubuntu 20.04.2 LTS without GPU support.
 
 
-- Install the latest [Nvidia driver](https://github.com/NVIDIA/nvidia-docker/wiki/Frequently-Asked-Questions#how-do-i-install-the-nvidia-driver)
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu)
-- Install [Nvidia Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 
 - Download the repository and build the Docker image
     ```shell
