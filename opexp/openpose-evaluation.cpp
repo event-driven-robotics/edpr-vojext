@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <string>
+#include <unistd.h>
 
 using std::vector;
 using std::string;
@@ -220,6 +221,8 @@ using std::string;
 //     }
 // };
 
+using namespace hpecore;
+
 int main(int argc, char * argv[])
 {
 
@@ -247,18 +250,36 @@ int main(int argc, char * argv[])
         return -1;
     }
 
+    hpecore::OpenPoseDetector openpose;
+    if(!openpose.init("/openpose/models", "COCO", "256")) 
+    {
+        std::cerr << "Could not initialise openpose" << std::endl;
+        return -1;
+    }
+
+
     cv::Mat frame;
+    double total_frames = input_video.get(cv::CAP_PROP_FRAME_COUNT);
+    int width = (int)input_video.get(cv::CAP_PROP_FRAME_WIDTH);
+    int height = (int)input_video.get(cv::CAP_PROP_FRAME_HEIGHT);
+
+    cv::namedWindow("Result", cv::WINDOW_NORMAL);
+    cv::resizeWindow("Result", cv::Size(640, 480));
+    sleep(1);
+    std::cout << "VIDEO: ["<<width<<","<<height<<"]"<<std::endl;
     //process the video
     while(true) 
     {
         input_video >> frame;
         if(frame.empty()) break;
 
-        cv::imshow("Frame", frame);
-        if(cv::waitKey() == 27) break;
+        double current_frame = input_video.get(cv::CAP_PROP_POS_FRAMES);
+        csv_writer.write({input_video.get(cv::CAP_PROP_POS_MSEC)*0.001, 0.0, openpose.detect(frame)});
+        hpecore::drawProgressBar(frame, current_frame/total_frames);
 
-        //skelwriter.write({input_video.get(cv::CAP_PROP_POS_MSEC)*1000.0, 0.0, detop.detect(frame)});
-
+        cv::imshow("Result", frame);
+        if(cv::waitKey(1) == 27) break;
+        
     }
 
     cv::destroyAllWindows();
