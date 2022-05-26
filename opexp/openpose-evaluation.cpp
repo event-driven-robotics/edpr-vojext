@@ -267,6 +267,8 @@ int main(int argc, char * argv[])
     cv::resizeWindow("Result", cv::Size(640, 480));
     sleep(1);
     std::cout << "VIDEO: ["<<width<<","<<height<<"]"<<std::endl;
+    std::cout << "Estimated time: "<<total_frames<<" @ 100ms = "
+              << total_frames*0.1/60<<" minutes"<<std::endl;
     //process the video
     while(true) 
     {
