@@ -10,14 +10,19 @@ do
     outfile=${eachfile%.*}
     outdir="$outpath${outfile##*/}"
     outfile="$outdir/$algname"
-    echo ${outdir}
+    #echo ${outdir}
 
     if ! [ -d $outdir ]; then
 	    mkdir $outdir
     fi
     chown aglover:aglover $outdir
+
     if ! [ -f $outfile ]; then
-        openpose-evaluation $eachfile $outfile
+	echo "processing ${outfile}"
+        openpose-evaluation $eachfile $outfile 2>1 1>/dev/null
+    else
+	echo "skipping ${outfile}: already exists"
     fi
+
     chown aglover:aglover $outfile
 done
