@@ -235,11 +235,24 @@ int main(int argc, char * argv[])
     //open input and output files
     string video_path(argv[1]);
     string csv_path(argv[2]);
+    string video_out_path = csv_path.substr(0, csv_path.size()-4) + ".mp4";
 
     cv::VideoCapture input_video;
     if(!input_video.open(video_path)) 
     {
         std::cerr << "Could not open video at: " << video_path << std::endl;
+        return -1;
+    }
+    double total_frames = input_video.get(cv::CAP_PROP_FRAME_COUNT);
+    int width = (int)input_video.get(cv::CAP_PROP_FRAME_WIDTH);
+    int height = (int)input_video.get(cv::CAP_PROP_FRAME_HEIGHT);
+    int fps = (int)input_video.get(cv::CAP_PROP_FPS);
+    
+
+    cv::VideoWriter output_video;
+    if(!output_video.open(video_out_path, cv::VideoWriter::fourcc('h','2','6','4'), fps, cv::Size(width, height), true))
+    {
+        std::cerr << "Could not open output video at: " << video_out_path << std::endl;
         return -1;
     }
 
@@ -259,9 +272,7 @@ int main(int argc, char * argv[])
 
 
     cv::Mat frame;
-    double total_frames = input_video.get(cv::CAP_PROP_FRAME_COUNT);
-    int width = (int)input_video.get(cv::CAP_PROP_FRAME_WIDTH);
-    int height = (int)input_video.get(cv::CAP_PROP_FRAME_HEIGHT);
+
 
     cv::namedWindow("Result", cv::WINDOW_NORMAL);
     cv::resizeWindow("Result", cv::Size(640, 480));
@@ -277,7 +288,9 @@ int main(int argc, char * argv[])
 
         double current_frame = input_video.get(cv::CAP_PROP_POS_FRAMES);
         csv_writer.write({input_video.get(cv::CAP_PROP_POS_MSEC)*0.001, 0.0, openpose.detect(frame)});
-        hpecore::drawProgressBar(frame, current_frame/total_frames);
+        //hpecore::drawProgressBar(frame, current_frame/total_frames);
+
+        output_video << frame;
 
         cv::imshow("Result", frame);
         if(cv::waitKey(1) == 27) break;
@@ -285,6 +298,7 @@ int main(int argc, char * argv[])
     }
 
     cv::destroyAllWindows();
+    output_video.release();
     input_video.release();
     csv_writer.close();
     return 0;
