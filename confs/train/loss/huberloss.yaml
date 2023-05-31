@@ -1,4 +1,0 @@
-loss:
-  cls: torch.nn.SmoothL1Loss
-  params:
-    reduction: mean
