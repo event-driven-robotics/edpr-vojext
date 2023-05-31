@@ -1,21 +1,24 @@
-albumentations
-h5py
+albumentations~=1.1.0
+h5py~=2.10.0
 scikit-image
-scikit-learn
+scikit-learn~=1.0.2
 scikit-video
-scipy
+scipy~=1.8.0
 torch>1
-kornia
+kornia~=0.6.6
 hydra-core
-omegaconf
-opencv-python
+omegaconf~=2.2.3
+opencv-python~=4.5.5.64
 pytorch-lightning==1.1.6
-torchvision
-tqdm
-numpy
-matplotlib
+torchvision~=0.11.3
+tqdm~=4.64.0
+numpy~=1.21.5
+matplotlib~=3.5.1
 segmentation_models_pytorch
-sklearn
+sklearn~=0.0
 -e git+https://github.com/anibali/pose3d-utils#egg=pose3d_utils
 -e git+https://github.com/IIT-PAVIS/event_library#egg=event_library
 comet_ml
+
+bimvee~=1.0.15
+setuptools~=57.0.0
