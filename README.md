@@ -1,48 +1,47 @@
-# edpr-vojext
-EDPR@IIT's repository for the European project [VOJEXT](http://vojext.eu/).
+# EDPR-VOJEXT
 
-Online setup of the [Lifting events to 3D HPE](https://github.com/IIT-PAVIS/lifting_events_to_3d_hpe) program with a YARP input setup.
-<!-- Use the hpecore installed with OpenPose functionality to perform HPE on greyscale images streamed over YARP. -->
-
-The application has been designed to run using docker for simple set-up of the environment.
+Event-driven Human Pose Estimation for Mobile Robots in Industry 
 
 ## Installation
-The software was tested on Ubuntu 20.04.2 LTS without GPU support.
+The software was tested on Ubuntu 20.04.2 LTS with an Nvidia GPU.
 
-
+- Install the latest [Nvidia driver](https://github.com/NVIDIA/nvidia-docker/wiki/Frequently-Asked-Questions#how-do-i-install-the-nvidia-driver)
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu)
-
+- Install [Nvidia Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 - Download the repository and build the Docker image
     ```shell
     $ cd <workspace>
     $ git clone git@github.com:event-driven-robotics/edpr-vojext.git
     $ cd edpr-vojext
-    $ docker build -t vojext --ssh default --build-arg ssh_pub_key="$(cat ~/.ssh/<publicKeyFile>.pub)" --build-arg ssh_prv_key="$(cat ~/.ssh/<privateKeyFile>)" - < Dockerfile
+    $ docker build -t edpr-vojext - < Dockerfile
     ```
 :bulb: `<workspace>` is the parent directory in which the repository is cloned
 
-:bulb: The ssh keys are required to for convenient access to the repositories within the Docker, some of which might be private at the time of use. [Create a new ssh key](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) if required.
-
-:warning: Ensure your ssh key is built without a passphrase.
-
 ## Usage
-- Run the Docker container and, inside it, run the gl-hpe pose detector
+- Run the Docker container and, inside it, run the pose detector
     ```shell
     $ xhost +
-    $ docker run -it -v /tmp/.X11-unix/:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY vojext bash
+    $ docker run -it --privileged --network host -v /tmp/.X11-unix/:/tmp/.X11-unix -v /dev/bus/usb:/dev/bus/usb -e DISPLAY=unix$DISPLAY --runtime=nvidia --name edpr-vojext edpr-vojext-demo
     ```
-  
-- At the terminal inside the container run the following commands
+
+- At the terminal inside the container run the following command to execute a script that will set up a yarpserver connected to ROS, run the atis-bridge to get the events from the camera and finally run the HPE application with a visualisation window. The application should automatically connect to required input and output YARP modules. This script also sets the value to the env variable `ROS_MASTER_URI`. It is either set to the default valaue (i.e. `http://127.0.0.1:11311`) using the `-d` flag, or manually set to a differnet value using the flag `-m`.
   ```shell 
-  $ yarpserver &
-  $ yarpmanager
+  $ ./run_vojext [-d (default)] or [-m value (manual)]
   ```
-  :warning: the `&` runs the process in the background enabling a single terminal to run both processes.
 
-- In the `yarpmanager`, load the application from `/usr/local/code/hpe-core/example/yarp-glhpe` and run all modules
 
-- In the `yarpdataplayer` GUI use the drop-down menus to load the test dataset at `/usr/local/code/hpe-core/example/test_dataset` and play
+- The application should run using the moveEnet event-driven HPE algorithm
 
-- Connect all connections in the `yarpmanager` 
-  
-- A new window should pop up and display the detected skeleton overlaid on the event frames
+- While the visualisation window is selected:
+  - Press `e` to visualise alternate representations (toggle between eros and events)
+  - Press `ESC` to close
+
+- The following command line options can be used `edpr-april --OPTION VALUE`
+  - `--detF <INT>` to modify the moveEnet detection rate [10]
+  - `--w <INT> --h <INT>` to set the dataset sensor resolution [640 480]
+  - `--pu <FLOAT> --muD <FLOAT>` to set the Kalman filter process and measurement uncertainty [0.001, 0.0004]
+
+To stop the application itself, the camera and the yarpserver, the follwoing command should be run in a temrinal inside the docker:
+```shell 
+$ ./stop_vojext
+```
