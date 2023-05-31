@@ -94,7 +94,7 @@ private:
     // internal data structures
     hpecore::skeleton13 skeleton_detection{0};
 
-    cv::Size image_size;
+    cv::Size image_size{640, 480};
     cv::Mat vis_image;
     cv::Mat edpr_logo;
 
@@ -129,7 +129,7 @@ public:
             return false;
         }
 
-        eros_handler.init(640, 480, 7, 0.3);
+        eros_handler.init(image_size.width, image_size.height, 7, 0.3);
 
         // =====READ PARAMETERS=====
         gpu = rf.check("gpu") && rf.check("gpu", Value(true)).asBool();
@@ -141,18 +141,18 @@ public:
         th_period = 1/thF;
 
         // run python code for movenet
-        if (gpu)
-            int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py --gpu &");
-        else
-            int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py &");
-        while (!yarp::os::NetworkBase::exists("/movenet/sklt:o"))
-            sleep(1);
-        yInfo() << "MoveEnet started correctly";
-        if (!mn_handler.init(getName("/eros:o"), getName("/movenet:i"), 80))
-        {
-            yError() << "Could not open movenet ports";
-            return false;
-        }
+        // if (gpu)
+        //     int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py --gpu &");
+        // else
+        //     int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py &");
+        // while (!yarp::os::NetworkBase::exists("/movenet/sklt:o"))
+        //     sleep(1);
+        // yInfo() << "MoveEnet started correctly";
+        // if (!mn_handler.init(getName("/eros:o"), getName("/movenet:i"), 80))
+        // {
+        //     yError() << "Could not open movenet ports";
+        //     return false;
+        // }
         
 
         // ===== SET UP INTERNAL VARIABLE/DATA STRUCTURES =====
@@ -183,30 +183,30 @@ public:
 
         // set-up ROS interface
 
-        ros_node = new yarp::os::Node("/APRIL");
-        if (!ros_publisher.topic("/pem/neuromorphic_camera/data"))
-        {
-            yError() << "Could not open ROS pose output publisher";
-            return false;
-        }
-        else
-            yInfo() << "ROS pose output publisher: OK";
+        // ros_node = new yarp::os::Node("/APRIL");
+        // if (!ros_publisher.topic("/pem/neuromorphic_camera/data"))
+        // {
+        //     yError() << "Could not open ROS pose output publisher";
+        //     return false;
+        // }
+        // else
+        //     yInfo() << "ROS pose output publisher: OK";
 
-        if (!publisherPort_eros.topic("/pem/neuromorphic_camera/eros"))
-        {
-            yError() << "Could not open ROS EROS output publisher";
-            return false;
-        }
-        else
-            yInfo() << "ROS EROS output publisher: OK";
+        // if (!publisherPort_eros.topic("/pem/neuromorphic_camera/eros"))
+        // {
+        //     yError() << "Could not open ROS EROS output publisher";
+        //     return false;
+        // }
+        // else
+        //     yInfo() << "ROS EROS output publisher: OK";
 
-        if (!publisherPort_evs.topic("/pem/neuromorphic_camera/evs"))
-        {
-            yError() << "Could not open ROS EVS output publisher";
-            return false;
-        }
-        else
-            yInfo() << "ROS EVS output publisher: OK";
+        // if (!publisherPort_evs.topic("/pem/neuromorphic_camera/evs"))
+        // {
+        //     yError() << "Could not open ROS EVS output publisher";
+        //     return false;
+        // }
+        // else
+        //     yInfo() << "ROS EVS output publisher: OK";
         
 
 
@@ -227,9 +227,9 @@ public:
     {
         // if the module is asked to stop ask the asynchronous thread to stop
         input_events.stop();
-        mn_handler.close();
+        //mn_handler.close();
         thread_events.join();
-        thread_detection.join();
+        //thread_detection.join();
         return true;
     }
 
@@ -250,13 +250,20 @@ public:
     // synchronous thread
     bool updateModule() override
     {
+
+        if (cv::getWindowProperty("edpr-vojext", cv::WND_PROP_ASPECT_RATIO) < 0) {
+            stopModule();
+            return false;
+        }
+            
+
         static cv::Mat canvas = cv::Mat(image_size, CV_8UC3);
         canvas.setTo(cv::Vec3b(0, 0, 0));
 
         drawEROS(canvas);
 
         // plot skeletons
-        hpecore::drawSkeleton(canvas, state.query(), {0, 0, 255}, 3);
+        //hpecore::drawSkeleton(canvas, state.query(), {0, 0, 255}, 3);
 
         if (!edpr_logo.empty())
         {
@@ -266,6 +273,7 @@ public:
         }
 
         cv::imshow("edpr-vojext", canvas);
+        cv::waitKey(1);
         return true;
     }
 
