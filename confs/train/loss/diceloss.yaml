@@ -1,2 +1,0 @@
-loss:
-  class: segmentation_models_pytorch.utils.losses.DiceLoss
