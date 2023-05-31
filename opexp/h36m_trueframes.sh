@@ -1,0 +1,1 @@
+ffmpeg -r 50 -start_number 0 -i cam2_S1_Directions/ch2frames/frame_%10d.png -c:v libx264 -vf "fps=50,format=yuv420p" /home/aglover/HPE/videos/test.mp4
