@@ -20,6 +20,60 @@ using namespace yarp::os;
 using namespace yarp::sig;
 using std::vector;
 
+class erosplus
+{
+private:
+
+    cv::Mat surface;
+    cv::Mat true_surface;
+    int k_size{7};
+    double absorb{0.05};
+    double inject{0.01};
+    double balance{100.0};
+
+public:
+    void init(int width, int height, int kernel_size = 7, double absorb = 0.05, double inject = 0.003)
+    {
+        k_size = kernel_size % 2 == 0 ? kernel_size + 1 : kernel_size;
+        this->absorb = absorb;
+        this->inject = inject;
+        surface = cv::Mat(height + k_size-1, width + k_size-1, CV_64F, cv::Scalar(10));
+        true_surface = surface({k_size/2, k_size/2, width, height});
+    }
+
+    void update(int u, int v)
+    {
+        static int half_kernel = k_size / 2;
+        static cv::Rect region = {0, 0, k_size, k_size};
+        static cv::Mat region_mat;
+        static double nabsorb = 1.0 - absorb;
+        
+        region.x = u; region.y = v; region_mat = surface(region);
+        double& c = surface.at<double>(v+half_kernel, u+half_kernel);
+        if(c > balance*2.0) {
+            region_mat *= 0.5;
+        } else {
+            double ca = 0.0;
+            for(int x = 0; x < k_size; x++) {
+                for(int y = 0; y < k_size; y++) {
+                    double& cc = region_mat.at<double>(y, x);
+                    ca += cc * absorb;
+                    cc *= nabsorb;
+                }
+            }
+            c += ca + balance*inject;
+        }
+    }
+
+    cv::Mat& getSurface()
+    {
+        static cv::Mat ret;
+        true_surface.convertTo(ret, CV_8U);
+        return ret;
+    }
+
+};
+
 class externalDetector
 {
 private:
@@ -53,8 +107,7 @@ public:
         if ((!waiting && latest_ts - tic > period) || (latest_ts - tic > 2.0))
         {
             static cv::Mat cv_image;
-            cv::GaussianBlur(latest_image, cv_image, cv::Size(5, 5), 0, 0);
-            output_port.prepare().copy(yarp::cv::fromCvMat<PixelMono>(cv_image));
+            output_port.prepare().copy(yarp::cv::fromCvMat<PixelMono>(latest_image));
             output_port.write();
             tic = latest_ts;
             waiting = true;
@@ -89,7 +142,7 @@ private:
 
     // velocity and fusion
     hpecore::multiJointLatComp state;
-    ev::EROS eros_handler;
+    erosplus eros_handler;
 
     // internal data structures
     hpecore::skeleton13 skeleton_detection{0};
@@ -99,7 +152,6 @@ private:
     cv::Mat edpr_logo;
 
     // parameters
-    bool gpu{false};
     double th_period{0.01}, thF{100.0};
     double tnow{0.0};
 
@@ -129,30 +181,26 @@ public:
             return false;
         }
 
-        eros_handler.init(image_size.width, image_size.height, 7, 0.3);
+        eros_handler.init(image_size.width, image_size.height);
 
         // =====READ PARAMETERS=====
-        gpu = rf.check("gpu") && rf.check("gpu", Value(true)).asBool();
-        double procU = rf.check("pu", Value(1e-1)).asFloat64();
-        double measUD = rf.check("muD", Value(1e-4)).asFloat64();
+        double procU = rf.check("pu", Value(10)).asFloat64();
+        double measUD = rf.check("muD", Value(1)).asFloat64();
         double measUV = rf.check("muV", Value(0)).asFloat64();
         
         thF = rf.check("thF", Value(100.0)).asFloat64();
         th_period = 1/thF;
 
         // run python code for movenet
-        // if (gpu)
-        //     int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py --gpu &");
-        // else
-        //     int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py &");
-        // while (!yarp::os::NetworkBase::exists("/movenet/sklt:o"))
-        //     sleep(1);
-        // yInfo() << "MoveEnet started correctly";
-        // if (!mn_handler.init(getName("/eros:o"), getName("/movenet:i"), 80))
-        // {
-        //     yError() << "Could not open movenet ports";
-        //     return false;
-        // }
+        int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py &");
+        while (!yarp::os::NetworkBase::exists("/movenet/sklt:o"))
+            sleep(1);
+        yInfo() << "MoveEnet started correctly";
+        if (!mn_handler.init(getName("/eros:o"), getName("/movenet:i"), 20))
+        {
+            yError() << "Could not open movenet ports";
+            return false;
+        }
         
 
         // ===== SET UP INTERNAL VARIABLE/DATA STRUCTURES =====
@@ -211,7 +259,7 @@ public:
 
 
         thread_events = std::thread([this]{ this->run_camera_interface(); });
-        //thread_detection = std::thread([this]{ this->run_detection(); });
+        thread_detection = std::thread([this]{ this->run_detection(); });
 
         return true;
     }
@@ -227,9 +275,12 @@ public:
     {
         // if the module is asked to stop ask the asynchronous thread to stop
         input_events.stop();
-        //mn_handler.close();
+        mn_handler.close();
         thread_events.join();
         //thread_detection.join();
+
+        int r = system("killall python3");
+        
         return true;
     }
 
@@ -242,10 +293,10 @@ public:
     void drawEROS(cv::Mat img)
     {
         cv::Mat blurred_eros;
-        cv::GaussianBlur(eros_handler.getSurface(), blurred_eros, {5, 5}, -1);
-        cv::cvtColor(blurred_eros, img, CV_GRAY2BGR);
-    }
+        //cv::GaussianBlur(eros_handler.getSurface(), blurred_eros, {1, 1}, -1);
+        cv::cvtColor(eros_handler.getSurface(), img, CV_GRAY2BGR);
 
+    }
 
     // synchronous thread
     bool updateModule() override
@@ -263,7 +314,7 @@ public:
         drawEROS(canvas);
 
         // plot skeletons
-        //hpecore::drawSkeleton(canvas, state.query(), {0, 0, 255}, 3);
+        hpecore::drawSkeleton(canvas, skeleton_detection, {0, 0, 255}, 3);
 
         if (!edpr_logo.empty())
         {
@@ -273,176 +324,38 @@ public:
         }
 
         cv::imshow("edpr-vojext", canvas);
-        cv::waitKey(1);
+        if(cv::waitKey(1) == '\e')
+            cv::destroyWindow("edpr-vojext");
         return true;
     }
-
-    // void run_detection()
-    // {
-    //     double latency = 0.0;
-    //     hpecore::stampedPose detected_pose;
-    //     double t0 = Time::now();
-    //     std:vector<double> sklt_out; 
-
-    //     while (!isStopping())
-    //     {
-    //         tnow = Time::now() - t0;
-
-    //         // ---------- DETECTIONS ----------
-    //         bool was_detected = false;
-    //         if (use_gt)
-    //         {
-    //             was_detected = gt_handler.update(tnow, detected_pose);
-    //         }
-    //         else if (movenet)
-    //         {
-    //             static cv::Mat eros8;
-    //             // pw_velocity.queryEROS().convertTo(eros8, CV_8U, 255);
-    //             if(vpx || noVE) pw_velocity.queryEROS().convertTo(eros8, CV_8U, 255);
-    //             if(vsf || ver || vcr) sf_velocity.queryEROS().copyTo(eros8);
-    //             if(vtr) trip_velocity.queryEROS().convertTo(eros8, CV_8U, 255);
-    //             if(pxt) pw_trip_velocity.queryEROS().convertTo(eros8, CV_8U, 255);
-    //             was_detected = mn_handler.update(eros8, tnow, detected_pose);
-    //         }
-
-    //         if (was_detected && hpecore::poseNonZero(detected_pose.pose))
-    //         {
-    //             skeleton_detection = detected_pose.pose;
-    //             latency = detected_pose.delay;
-    //             if (state.poseIsInitialised())
-    //                 state.updateFromPosition(skeleton_detection, detected_pose.timestamp);
-    //             else
-    //                 state.set(skeleton_detection, tnow);
-    //         }
-    //     }
-    // }
-
-    // void updateSAE()
-    // {
-
-    // }
 
     void run_camera_interface()
     {
         while (!isStopping())
         {
             ev::info stats = input_events.readAll(true);
+            tnow = stats.timestamp;
             for(auto &v : input_events)
                 eros_handler.update(v.x, v.y);
         }
     }
 
-    // void run_opixels()
-    // {
-    //     hpecore::skeleton13_vel jv;
-    //     hpecore::skeleton13_vel skel_vel = {0};
-    //     ev::info event_stats = {0};
-    //     double latency = 0.0;
-    //     hpecore::stampedPose detected_pose;
-    //     input_events.readPacket(true);
-    //     double t0 = Time::now();
-    //     std:vector<double> sklt_out, vel_out;
-    //     double t1, t2, dt;
-    //     double ts0;
+    void run_detection()
+    {
+        while (!isStopping())
+        {
+        hpecore::stampedPose detected_pose;
+        bool was_detected = mn_handler.update(eros_handler.getSurface(), yarp::os::Time::now(), detected_pose);
 
-    //     while (!isStopping())
-    //     {
-    //         double tnow = Time::now() - t0;
+        if(was_detected)
+            if(!state.poseIsInitialised())
+                state.set(detected_pose.pose, detected_pose.timestamp);
+            else
+                state.updateFromPosition(detected_pose.pose, detected_pose.timestamp);
+            skeleton_detection = state.query();
+        }
+    }
 
-    //         // ---------- VELOCITY ----------
-    //         // read events
-    //         event_stats = input_events.readAll(false);
-    //         if (event_stats.count == 0)
-    //             continue;
-
-    //         if(!started)
-    //         {
-    //             started = true;
-    //             ts0 = event_stats.timestamp;
-    //         } 
-
-    //         // update images
-    //         for (auto &v : input_events)
-    //         {
-    //             // if (v.p)
-    //             //     vis_image.at<cv::Vec3b>(v.y, v.x) = cv::Vec3b(64, 150, 90);
-    //             // else
-    //             //     vis_image.at<cv::Vec3b>(v.y, v.x) = cv::Vec3b(32, 82, 50);
-    //             vis_image.at<cv::Vec3b>(v.y, v.x) = cv::Vec3b(255, 255, 255);
-    //         }
-
-    //         t1 = Time::now();
-    //         if(vpx || vtr || noVE) pw_velocity.update(input_events.begin(), input_events.end());
-            
-
-    //         // only update velocity if the pose is initialised
-    //         if (!state.poseIsInitialised())
-    //             continue;
-
-    //         if(vpx) skel_vel = pw_velocity.query(state.query(), roiSize, 2, state.queryVelocity());
-    //         if(vsf) skel_vel = sf_velocity.update(input_events.begin(), input_events.end(), state.query(), tnow);
-    //         if(ver)
-    //         {
-    //             sf_velocity.errorToVel(input_events.begin(), input_events.end(), state.query(), state.queryVelocity(), state.queryError(), tnow);
-    //             skel_vel = sf_velocity.updateOnError(state.queryVelocity(), state.queryError());
-    //         }
-    //         if(vcr)
-    //         {
-    //             sf_velocity.errorToCircle(input_events.begin(), input_events.end(), state.query(), state.queryVelocity(), state.queryError(), tnow);
-    //             skel_vel = sf_velocity.updateOnError(state.queryVelocity(), state.queryError());
-    //         }
-    //         if(vqu)
-    //         {
-    //             skel_vel = q_velocity.update(input_events.begin(), input_events.end(), state.query(), event_stats.timestamp);
-    //         }
-    //         if(vtr) skel_vel = trip_velocity.update(input_events.begin(), input_events.end(), state.query(), event_stats.timestamp);
-
-    //         if(pxt)
-    //         {
-    //             pw_trip_velocity.updateSAE(input_events.begin(), input_events.end(), event_stats.timestamp-ts0); 
-    //             skel_vel = pw_trip_velocity.query(state.query(), event_stats.timestamp-ts0, roiSize, 1);
-    //         }
-            
-    //         // yInfo() << event_stats.timestamp;
-    //         // hpecore::print_skeleton(skel_vel);
-    //         // this scaler was thought to be from timestamp misconversion.
-    //         // instead we aren't sure why it is needed.
-    //         for (int j = 0; j < 13; j++) // (F) overload * to skeleton13
-    //             skel_vel[j] = skel_vel[j] * scaler;
-    //         state.setVelocity(skel_vel);
-    //         // if(vpx) state.updateFromVelocity(skel_vel, event_stats.timestamp);
-    //         // else state.updateFromVelocity(skel_vel, event_stats.timestamp);
-    //         state.updateFromVelocity(skel_vel, event_stats.timestamp);
-
-    //         t2 = Time::now();
-    //         dt = (t2 - t1) * 1e3;
-    //         if(poseWr) skelwriter.write({event_stats.timestamp, dt, state.query()});
-    //         if(velWr) velwriter.write({event_stats.timestamp, dt, skel_vel});
-
-    //         // skelwriter.write({event_stats.timestamp, latency, state.query()});
-    //         // velwriter.write({event_stats.timestamp, latency, skel_vel});
-
-    //         if (ros)
-    //         {
-    //             // format skeleton to ros output
-    //             sklt_out.clear();
-    //             vel_out.clear();
-    //             for (int j = 0; j < 13; j++)
-    //             {
-    //                 sklt_out.push_back(skeleton_detection[j].u);
-    //                 sklt_out.push_back(skeleton_detection[j].v);
-    //                 vel_out.push_back(skel_vel[j].u);
-    //                 vel_out.push_back(skel_vel[j].v);
-    //             }
-    //             ros_output.timestamp = tnow;
-    //             ros_output.pose = sklt_out;
-    //             ros_output.velocity = vel_out;
-    //             // publish data
-    //             ros_publisher.prepare() = ros_output;
-    //             ros_publisher.write();
-    //         }
-    //     }
-    // }
 };
 
 int main(int argc, char *argv[])

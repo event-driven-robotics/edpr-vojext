@@ -1,14 +1,15 @@
 
 # base image
-FROM nvidia/cuda:11.5.2-cudnn8-devel-ubuntu20.04
+FROM ubuntu:focal
 
 ENV DEBIAN_FRONTEND noninteractive
 
 # install basic indpendence
 RUN apt update
-RUN apt install -y build-essential libssl-dev software-properties-common 
-RUN apt install -y cmake cmake-curses-gui vim nano git sudo openssh-client git
-RUN apt install -y libboost-all-dev libmysqlclient-dev ffmpeg libsm6 libxext6 libcanberra-gtk-module 
+RUN apt install -y build-essential
+RUN apt install -y cmake git openssh-client git
+RUN apt install -y ffmpeg libcanberra-gtk-module mesa-utils
+RUN apt install -y libboost-program-options-dev libeigen3-dev swig
 
 ##########
 # PYTHON & PIP #
@@ -35,6 +36,7 @@ RUN apt install -y libopencv-dev python3-opencv
 ###############
 # NEUROMORHPIC CAMERA DRIVER #
 ###############
+RUN apt install -y software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN echo "deb [arch=amd64 trusted=yes] https://apt.prophesee.ai/dists/public/7l58osgr/ubuntu focal essentials" >> /etc/apt/sources.list;
 RUN apt update
@@ -53,30 +55,12 @@ ARG YARP_VERSION=v3.8.0
 ARG EVENT_DRIVEN_VERSION=master
 ARG HPE_VERSION=main
 
-RUN apt update
-
-RUN apt install -y \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    lsb-core \
-    swig
-
 # Install yarp dependencies
 RUN apt install -y \
         libgsl-dev \
         libedit-dev \
         libace-dev \
-        libeigen3-dev \
-        qtbase5-dev \
-        qt5-default \
-        qtdeclarative5-dev \
-        qtmultimedia5-dev \
-        qml-module-qtquick2 \
-        qml-module-qtquick-window2 \
-        qml-module-qtmultimedia \
-        qml-module-qtquick-dialogs \
-        qml-module-qtquick-controls
+        libeigen3-dev
 
 # git clone --depth 1 --branch <branch> url
 # Install YCM
