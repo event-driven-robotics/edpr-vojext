@@ -324,7 +324,7 @@ public:
         {
         hpecore::stampedPose detected_pose;
         cv::Mat img;
-        drawEROS(img);
+        cv::GaussianBlur(eros_handler.getSurface(), img, {5, 5}, -1);
         bool was_detected = mn_handler.update(img, yarp::os::Time::now(), detected_pose);
 
         if(was_detected)
