@@ -115,6 +115,8 @@ RUN cd $SOURCE_FOLDER && \
     cd edpr-vojext && mkdir build && cd build && \
     cmake .. && make install -j$(nproc)
     
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/99local.conf && ldconfig
+    
 RUN apt autoremove && apt clean
 RUN rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
 
