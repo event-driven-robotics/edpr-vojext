@@ -32,4 +32,4 @@ echo "Run ATIS-bridge"
 atis-bridge-sdk --s 60 --filter 0.01 &
 sleep 5
 echo "Run EDPR-VOJEXT application"
-edpr-vojext-demo &
+edpr-vojext-demo --moveEnet_f 5 --publish_f 10 --vis true &

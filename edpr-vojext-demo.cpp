@@ -47,13 +47,14 @@ public:
         input_port.close();
     }
 
-    bool update(cv::Mat latest_image, double latest_ts, hpecore::stampedPose &previous_skeleton)
+    bool update(const cv::Mat &latest_image, double latest_ts, hpecore::stampedPose &previous_skeleton)
     {
         // send an update if the timer has elapsed
         if ((!waiting && latest_ts - tic > period) || (latest_ts - tic > 2.0))
         {
             static cv::Mat cv_image;
-            output_port.prepare().copy(yarp::cv::fromCvMat<PixelMono>(latest_image));
+            cv::GaussianBlur(latest_image, cv_image, {5, 5}, -1);
+            output_port.prepare().copy(yarp::cv::fromCvMat<PixelMono>(cv_image));
             output_port.write();
             tic = latest_ts;
             waiting = true;
@@ -101,6 +102,7 @@ private:
     // parameters
     double th_period{0.01}, thF{100.0};
     double tnow{0.0};
+    bool vis{false};
 
     // ros 
     yarp::os::Node* ros_node{nullptr};
@@ -136,6 +138,7 @@ public:
         
         double moveEnet_f = rf.check("moveEnet_f", Value(30.0)).asFloat64();
         double publish_f = rf.check("publish_f", Value(30.0)).asFloat64();
+        vis = rf.check("vis", Value(false)).asBool(); 
         th_period = 1.0/publish_f;
 
         // run python code for movenet
@@ -256,11 +259,6 @@ public:
     bool updateModule() override
     {
 
-        if (cv::getWindowProperty("edpr-vojext", cv::WND_PROP_ASPECT_RATIO) < 0) {
-            stopModule();
-            return false;
-        }
-        
         {
             // EROS
             cv::Mat temp;
@@ -281,30 +279,38 @@ public:
             memcpy(rosEVS.data.data(), yarpEVS.getRawImage(), yarpEVS.getRawImageSize());
             publisherPort_evs.write();
         }
-        static bool show_eros = true;
-        static cv::Mat canvas = cv::Mat(image_size, CV_8UC3, cv::Vec3b(0, 0, 0));
 
-        if(show_eros)
-            drawEROS(canvas);
-        else
-            cv::cvtColor(vis_image, canvas, cv::COLOR_GRAY2BGR);
+        if(vis) {
+            if (cv::getWindowProperty("edpr-vojext", cv::WND_PROP_ASPECT_RATIO) < 0) {
+                stopModule();
+                return false;
+            }
 
-        // plot skeletons
-        hpecore::drawSkeleton(canvas, skeleton_detection, {0, 0, 255}, 3);
+            static bool show_eros = true;
+            static cv::Mat canvas = cv::Mat(image_size, CV_8UC3, cv::Vec3b(0, 0, 0));
 
-        if (!edpr_logo.empty())
-        {
-            static cv::Mat mask;
-            cv::cvtColor(edpr_logo, mask, CV_BGR2GRAY);
-            edpr_logo.copyTo(canvas, mask);
+            if(show_eros)
+                drawEROS(canvas);
+            else
+                cv::cvtColor(vis_image, canvas, cv::COLOR_GRAY2BGR);
+
+            // plot skeletons
+            hpecore::drawSkeleton(canvas, skeleton_detection, {0, 0, 255}, 3);
+
+            if (!edpr_logo.empty())
+            {
+                static cv::Mat mask;
+                cv::cvtColor(edpr_logo, mask, CV_BGR2GRAY);
+                edpr_logo.copyTo(canvas, mask);
+            }
+
+            cv::imshow("edpr-vojext", canvas);
+            char key = cv::waitKey(1);
+            if(key == '\e')
+                cv::destroyWindow("edpr-vojext");
+            else if(key == 'e')
+                show_eros = !show_eros; 
         }
-
-        cv::imshow("edpr-vojext", canvas);
-        char key = cv::waitKey(1);
-        if(key == '\e')
-            cv::destroyWindow("edpr-vojext");
-        else if(key == 'e')
-            show_eros = !show_eros; 
         
 
         vis_image.setTo(0);
@@ -326,14 +332,13 @@ public:
 
     void run_detection()
     {
+
         while (!isStopping())
         {
         hpecore::stampedPose detected_pose;
-        cv::Mat img;
-        cv::GaussianBlur(eros_handler.getSurface(), img, {5, 5}, -1);
-        bool was_detected = mn_handler.update(img, yarp::os::Time::now(), detected_pose);
+        bool was_detected = mn_handler.update(eros_handler.getSurface(), yarp::os::Time::now(), detected_pose);
 
-        if(was_detected)
+        if(was_detected) {
             if(!state.poseIsInitialised())
                 state.set(detected_pose.pose, detected_pose.timestamp);
             else
@@ -353,6 +358,12 @@ public:
                 ros_output.timestamp = tnow;
                 ros_publisher.write();
             }
+
+        } else {
+            yarp::os::Time::delay(0.05);
+        }
+
+
         }
     }
 
