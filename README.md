@@ -31,7 +31,6 @@ The software was tested on Ubuntu 20.04.2 LTS
 - The application should run using the moveEnet event-driven HPE algorithm
 
 - While the visualisation window is selected:
-  - Press `e` to visualise alternate representations (toggle between eros and events)
   - Press `ESC` to close
 
 - The following command line options can be used `edpr-vojext-demo --OPTION VALUE`
