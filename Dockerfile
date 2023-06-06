@@ -9,7 +9,7 @@ RUN apt update
 RUN apt install -y build-essential
 RUN apt install -y cmake git openssh-client git
 RUN apt install -y ffmpeg libcanberra-gtk-module mesa-utils
-RUN apt install -y libboost-program-options-dev libeigen3-dev swig
+RUN apt install -y libboost-program-options-dev libeigen3-dev swig psmisc
 
 ##########
 # PYTHON & PIP #
@@ -61,6 +61,8 @@ RUN apt install -y \
         libedit-dev \
         libace-dev \
         libeigen3-dev
+        
+RUN apt update && apt upgrade
 
 # git clone --depth 1 --branch <branch> url
 # Install YCM
