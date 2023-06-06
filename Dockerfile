@@ -109,10 +109,9 @@ ENV PYTHONPATH "${PYTHONPATH}:$SOURCE_FOLDER/hpe-core"
 # VOJEXT demo
 
 RUN cd $SOURCE_FOLDER && \
-    git clone --branch main https://github.com/event-driven-robotics/edpr-vojext.git 
-    #&& \
-    #cd edpr-vojext && mkdir build && cd build && \
-    #cmake .. && make install -j$(nproc)
+    git clone --branch main https://github.com/event-driven-robotics/edpr-vojext.git && \
+    cd edpr-vojext && mkdir build && cd build && \
+    cmake .. && make install -j$(nproc)
     
 RUN apt autoremove && apt clean
 RUN rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
