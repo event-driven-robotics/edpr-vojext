@@ -323,7 +323,9 @@ public:
         while (!isStopping())
         {
         hpecore::stampedPose detected_pose;
-        bool was_detected = mn_handler.update(eros_handler.getSurface(), yarp::os::Time::now(), detected_pose);
+        cv::Mat img;
+        drawEROS(img);
+        bool was_detected = mn_handler.update(img, yarp::os::Time::now(), detected_pose);
 
         if(was_detected)
             if(!state.poseIsInitialised())
