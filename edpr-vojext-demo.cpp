@@ -159,7 +159,6 @@ private:
     // ros 
     yarp::os::Node* ros_node{nullptr};
     yarp::os::Publisher<yarp::rosmsg::NC_humanPose> ros_publisher;
-    yarp::rosmsg::NC_humanPose ros_output;
     typedef yarp::os::Publisher<yarp::rosmsg::sensor_msgs::Image> ImageTopicType;
     ImageTopicType publisherPort_eros, publisherPort_evs;
 
@@ -189,8 +188,9 @@ public:
         double measUD = rf.check("muD", Value(1)).asFloat64();
         double measUV = rf.check("muV", Value(0)).asFloat64();
         
-        thF = rf.check("thF", Value(100.0)).asFloat64();
-        th_period = 1/thF;
+        double moveEnet_f = rf.check("moveEnet_f", Value(30.0)).asFloat64();
+        double publish_f = rf.check("publish_f", Value(30.0)).asFloat64();
+        th_period = 1.0/publish_f;
 
         // run python code for movenet
         int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py &");
@@ -204,7 +204,7 @@ public:
         yInfo() << killline;
         
 
-        if (!mn_handler.init(getName("/eros:o"), getName("/movenet:i"), 30))
+        if (!mn_handler.init(getName("/eros:o"), getName("/movenet:i"), moveEnet_f))
         {
             yError() << "Could not open movenet ports";
             return false;
@@ -213,8 +213,8 @@ public:
         // ===== SET UP INTERNAL VARIABLE/DATA STRUCTURES =====
 
         // shared images
-        vis_image = cv::Mat(image_size, CV_8UC3, cv::Vec3b(0, 0, 0));
-        edpr_logo = cv::imread("/usr/local/src/EDPR-APRIL/edpr_logo.png");
+        vis_image = cv::Mat(image_size, CV_8U, cv::Scalar(0));
+        edpr_logo = cv::imread("/usr/local/src/edpr-vojext/edpr_logo.png");
 
         // fusion
         if (!state.initialise({procU, measUD, measUV, -1.0}))
@@ -238,30 +238,30 @@ public:
 
         // set-up ROS interface
 
-        // ros_node = new yarp::os::Node("/VOJEXT");
-        // if (!ros_publisher.topic("/pem/neuromorphic_camera/data"))
-        // {
-        //     yError() << "Could not open ROS pose output publisher";
-        //     return false;
-        // }
-        // else
-        //     yInfo() << "ROS pose output publisher: OK";
+        ros_node = new yarp::os::Node("/VOJEXT");
+        if (!ros_publisher.topic("/pem/neuromorphic_camera/data"))
+        {
+            yError() << "Could not open ROS pose output publisher";
+            return false;
+        }
+        else
+            yInfo() << "ROS pose output publisher: OK";
 
-        // if (!publisherPort_eros.topic("/pem/neuromorphic_camera/eros"))
-        // {
-        //     yError() << "Could not open ROS EROS output publisher";
-        //     return false;
-        // }
-        // else
-        //     yInfo() << "ROS EROS output publisher: OK";
+        if (!publisherPort_eros.topic("/pem/neuromorphic_camera/eros"))
+        {
+            yError() << "Could not open ROS EROS output publisher";
+            return false;
+        }
+        else
+            yInfo() << "ROS EROS output publisher: OK";
 
-        // if (!publisherPort_evs.topic("/pem/neuromorphic_camera/evs"))
-        // {
-        //     yError() << "Could not open ROS EVS output publisher";
-        //     return false;
-        // }
-        // else
-        //     yInfo() << "ROS EVS output publisher: OK";
+        if (!publisherPort_evs.topic("/pem/neuromorphic_camera/evs"))
+        {
+            yError() << "Could not open ROS EVS output publisher";
+            return false;
+        }
+        else
+            yInfo() << "ROS EVS output publisher: OK";
         
 
 
@@ -314,7 +314,25 @@ public:
             stopModule();
             return false;
         }
-            
+        
+        {
+            // EROS
+            auto yarpEROS = yarp::cv::fromCvMat<yarp::sig::PixelMono>(eros_handler.getSurface());
+            yarp::rosmsg::sensor_msgs::Image& rosEROS = publisherPort_eros.prepare();
+            rosEROS.data.resize(yarpEROS.getRawImageSize());
+            rosEROS.width = yarpEROS.width();
+            rosEROS.height = yarpEROS.height();
+            memcpy(rosEROS.data.data(), yarpEROS.getRawImage(), yarpEROS.getRawImageSize());
+            publisherPort_eros.write();
+            // EV image
+            auto yarpEVS = yarp::cv::fromCvMat<yarp::sig::PixelMono>(vis_image);
+            yarp::rosmsg::sensor_msgs::Image& rosEVS = publisherPort_evs.prepare();
+            rosEVS.data.resize(yarpEVS.getRawImageSize());
+            rosEVS.width = yarpEVS.width();
+            rosEVS.height = yarpEVS.height();
+            memcpy(rosEVS.data.data(), yarpEVS.getRawImage(), yarpEVS.getRawImageSize());
+            publisherPort_evs.write();
+        }
 
         static cv::Mat canvas = cv::Mat(image_size, CV_8UC3);
         canvas.setTo(cv::Vec3b(0, 0, 0));
@@ -334,6 +352,8 @@ public:
         cv::imshow("edpr-vojext", canvas);
         if(cv::waitKey(1) == '\e')
             cv::destroyWindow("edpr-vojext");
+
+        vis_image.setTo(0);
         return true;
     }
 
@@ -345,7 +365,7 @@ public:
             tnow = stats.timestamp;
             for(auto &v : input_events) {
                 eros_handler.update(v.x, v.y);
-
+                vis_image.at<unsigned char>(v.y, v.x) = 255;
             }
         }
     }
@@ -363,6 +383,20 @@ public:
             else
                 state.updateFromPosition(detected_pose.pose, detected_pose.timestamp);
             skeleton_detection = state.query();
+
+            {
+                // format skeleton to ros output
+                yarp::rosmsg::NC_humanPose& ros_output = ros_publisher.prepare();
+                ros_output.pose.resize(26);
+                ros_output.velocity.resize(26, 0.0);
+                for (int j = 0; j < 13; j++)
+                {
+                    ros_output.pose[j*2] = skeleton_detection[j].u;
+                    ros_output.pose[j*2+1] = skeleton_detection[j].v;
+                }
+                ros_output.timestamp = tnow;
+                ros_publisher.write();
+            }
         }
     }
 

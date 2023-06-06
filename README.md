@@ -35,9 +35,10 @@ The software was tested on Ubuntu 20.04.2 LTS with an Nvidia GPU.
   - Press `ESC` to close
 
 - The following command line options can be used `edpr-vojext-demo --OPTION VALUE`
-  - `--detF <INT>` to modify the moveEnet detection rate [10]
+  - `--moveEnet_f <INT>` to modify the moveEnet detection rate [30]
+  - `--publish_f <INT>` to modify the rate images are published to ROS [30]
   - `--w <INT> --h <INT>` to set the dataset sensor resolution [640 480]
-  - `--pu <FLOAT> --muD <FLOAT>` to set the Kalman filter process and measurement uncertainty [0.001, 0.0004]
+  - `--pu <FLOAT> --muD <FLOAT>` to set the Kalman filter process and measurement uncertainty [10, 1]
 
 To stop the application itself, the camera and the yarpserver, the follwoing command should be run in a temrinal inside the docker:
 ```shell 
