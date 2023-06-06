@@ -3,7 +3,7 @@
 Event-driven Human Pose Estimation for Mobile Robots in Industry 
 
 ## Installation
-The software was tested on Ubuntu 20.04.2 LTS with an Nvidia GPU.
+The software was tested on Ubuntu 20.04.2 LTS
 
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu)
 - Download the repository and build the Docker image
