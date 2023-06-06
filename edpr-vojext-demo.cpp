@@ -20,60 +20,6 @@ using namespace yarp::os;
 using namespace yarp::sig;
 using std::vector;
 
-class erosplus
-{
-private:
-
-    cv::Mat surface;
-    cv::Mat true_surface;
-    int k_size{7};
-    double absorb{0.05};
-    double inject{0.01};
-    double balance{100.0};
-
-public:
-    void init(int width, int height, int kernel_size = 7, double absorb = 0.05, double inject = 0.003)
-    {
-        k_size = kernel_size % 2 == 0 ? kernel_size + 1 : kernel_size;
-        this->absorb = absorb;
-        this->inject = inject;
-        surface = cv::Mat(height + k_size-1, width + k_size-1, CV_64F, cv::Scalar(10));
-        true_surface = surface({k_size/2, k_size/2, width, height});
-    }
-
-    void update(int u, int v)
-    {
-        static int half_kernel = k_size / 2;
-        static cv::Rect region = {0, 0, k_size, k_size};
-        static cv::Mat region_mat;
-        static double nabsorb = 1.0 - absorb;
-        
-        region.x = u; region.y = v; region_mat = surface(region);
-        double& c = surface.at<double>(v+half_kernel, u+half_kernel);
-        if(c > balance*2.0) {
-            region_mat *= 0.5;
-        } else {
-            double ca = 0.0;
-            for(int x = 0; x < k_size; x++) {
-                for(int y = 0; y < k_size; y++) {
-                    double& cc = region_mat.at<double>(y, x);
-                    ca += cc * absorb;
-                    cc *= nabsorb;
-                }
-            }
-            c += ca + balance*inject;
-        }
-    }
-
-    cv::Mat& getSurface()
-    {
-        static cv::Mat ret;
-        true_surface.convertTo(ret, CV_8U);
-        return ret;
-    }
-
-};
-
 class externalDetector
 {
 private:
@@ -143,7 +89,7 @@ private:
 
     // velocity and fusion
     hpecore::multiJointLatComp state;
-    erosplus eros_handler;
+    ev::EROS eros_handler;
 
     // internal data structures
     hpecore::skeleton13 skeleton_detection{0};
@@ -181,7 +127,7 @@ public:
             return false;
         }
 
-        eros_handler.init(image_size.width, image_size.height);
+        eros_handler.init(image_size.width, image_size.height, 7, 0.3);
 
         // =====READ PARAMETERS=====
         double procU = rf.check("pu", Value(10)).asFloat64();
@@ -301,8 +247,8 @@ public:
     void drawEROS(cv::Mat img)
     {
         cv::Mat blurred_eros;
-        //cv::GaussianBlur(eros_handler.getSurface(), blurred_eros, {1, 1}, -1);
-        cv::cvtColor(eros_handler.getSurface(), img, CV_GRAY2BGR);
+        cv::GaussianBlur(eros_handler.getSurface(), blurred_eros, {5, 5}, -1);
+        cv::cvtColor(blurred_eros, img, CV_GRAY2BGR);
 
     }
 
@@ -317,7 +263,9 @@ public:
         
         {
             // EROS
-            auto yarpEROS = yarp::cv::fromCvMat<yarp::sig::PixelMono>(eros_handler.getSurface());
+            cv::Mat temp;
+            drawEROS(temp);
+            auto yarpEROS = yarp::cv::fromCvMat<yarp::sig::PixelMono>(temp);
             yarp::rosmsg::sensor_msgs::Image& rosEROS = publisherPort_eros.prepare();
             rosEROS.data.resize(yarpEROS.getRawImageSize());
             rosEROS.width = yarpEROS.width();
