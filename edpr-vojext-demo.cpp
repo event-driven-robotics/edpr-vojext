@@ -281,11 +281,13 @@ public:
             memcpy(rosEVS.data.data(), yarpEVS.getRawImage(), yarpEVS.getRawImageSize());
             publisherPort_evs.write();
         }
+        static bool show_eros = true;
+        static cv::Mat canvas = cv::Mat(image_size, CV_8UC3, cv::Vec3b(0, 0, 0));
 
-        static cv::Mat canvas = cv::Mat(image_size, CV_8UC3);
-        canvas.setTo(cv::Vec3b(0, 0, 0));
-
-        drawEROS(canvas);
+        if(show_eros)
+            drawEROS(canvas);
+        else
+            cv::cvtColor(vis_image, canvas, cv::COLOR_GRAY2BGR);
 
         // plot skeletons
         hpecore::drawSkeleton(canvas, skeleton_detection, {0, 0, 255}, 3);
@@ -298,8 +300,12 @@ public:
         }
 
         cv::imshow("edpr-vojext", canvas);
-        if(cv::waitKey(1) == '\e')
+        char key = cv::waitKey(1);
+        if(key == '\e')
             cv::destroyWindow("edpr-vojext");
+        else if(key == 'e')
+            show_eros = !show_eros; 
+        
 
         vis_image.setTo(0);
         return true;
