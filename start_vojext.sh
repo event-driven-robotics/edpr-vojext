@@ -13,7 +13,7 @@ while getopts 'dm:' OPTION; do
         echo "ROS_MASTER_URI="$ROS_MASTER_URI
         ;;
     ?)
-        echo "script usage: /run_april.sh [-d (default)] or [-m value (manual)]" >&2
+        echo "script usage: /run_vojext.sh [-d (default)] or [-m value (manual)]" >&2
         exit 1
         ;;
     esac
@@ -27,7 +27,9 @@ fi
 
 echo "Run YARP server connected to ROS"
 yarpserver --ros &
+sleep 2
 echo "Run ATIS-bridge"
 atis-bridge-sdk --s 60 --filter 0.01 &
-echo "Run EDPR-APRIL application"
-edpr-april
+sleep 5
+echo "Run EDPR-VOJEXT application"
+edpr-vojext-demo &

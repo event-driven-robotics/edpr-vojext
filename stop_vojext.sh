@@ -1,11 +1,11 @@
 #!/bin/bash
-echo "Killing all APRIL tasks"
+echo "Killing all VOJEXT tasks"
 echo "======================="
-killall python3
-echo "Killed MoveEnet"
-killall edpr-april
-echo "Killed EDPR APRIL app"
+killall edpr-vojext-demo
+sleep 3
+echo "Killed EDPR VOJEXT app"
 killall atis-bridge-sdk
+sleep 3
 echo "ATIS-bridge killed"
 killall yarpserver
 echo "YARP server killed"

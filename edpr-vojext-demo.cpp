@@ -139,6 +139,7 @@ private:
 
     // detection handlers
     externalDetector mn_handler;
+    std::string killline;
 
     // velocity and fusion
     hpecore::multiJointLatComp state;
@@ -196,12 +197,18 @@ public:
         while (!yarp::os::NetworkBase::exists("/movenet/sklt:o"))
             sleep(1);
         yInfo() << "MoveEnet started correctly";
-        if (!mn_handler.init(getName("/eros:o"), getName("/movenet:i"), 20))
+
+        FILE* pipe = popen("pgrep -f movenet_online", "r");
+        killline = "kill "; killline.resize(32);
+        char * k = fgets(killline.data()+5, killline.size()-5, pipe);
+        yInfo() << killline;
+        
+
+        if (!mn_handler.init(getName("/eros:o"), getName("/movenet:i"), 30))
         {
             yError() << "Could not open movenet ports";
             return false;
         }
-        
 
         // ===== SET UP INTERNAL VARIABLE/DATA STRUCTURES =====
 
@@ -231,7 +238,7 @@ public:
 
         // set-up ROS interface
 
-        // ros_node = new yarp::os::Node("/APRIL");
+        // ros_node = new yarp::os::Node("/VOJEXT");
         // if (!ros_publisher.topic("/pem/neuromorphic_camera/data"))
         // {
         //     yError() << "Could not open ROS pose output publisher";
@@ -277,9 +284,10 @@ public:
         input_events.stop();
         mn_handler.close();
         thread_events.join();
-        //thread_detection.join();
+        thread_detection.join();
 
-        int r = system("killall python3");
+
+        int r = system(killline.c_str());
         
         return true;
     }
@@ -335,8 +343,10 @@ public:
         {
             ev::info stats = input_events.readAll(true);
             tnow = stats.timestamp;
-            for(auto &v : input_events)
+            for(auto &v : input_events) {
                 eros_handler.update(v.x, v.y);
+
+            }
         }
     }
 
