@@ -62,7 +62,7 @@ RUN apt install -y \
         libace-dev \
         libeigen3-dev
         
-RUN apt update && apt upgrade
+RUN apt update && apt -y upgrade
 
 # git clone --depth 1 --branch <branch> url
 # Install YCM
