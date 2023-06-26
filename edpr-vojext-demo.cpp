@@ -187,7 +187,7 @@ public:
 
         // set-up ROS interface
 
-        ros_node = new yarp::os::Node("/VOJEXT");
+        ros_node = new yarp::os::Node("/edpr_vojext");
         if (!ros_publisher.topic("/pem/neuromorphic_camera/data"))
         {
             yError() << "Could not open ROS pose output publisher";
@@ -262,12 +262,13 @@ public:
         {
             // EROS
             cv::Mat temp;
-            drawEROS(temp);
+            cv::GaussianBlur(eros_handler.getSurface(), temp, {5, 5}, -1);
             auto yarpEROS = yarp::cv::fromCvMat<yarp::sig::PixelMono>(temp);
             yarp::rosmsg::sensor_msgs::Image& rosEROS = publisherPort_eros.prepare();
             rosEROS.data.resize(yarpEROS.getRawImageSize());
             rosEROS.width = yarpEROS.width();
             rosEROS.height = yarpEROS.height();
+            rosEROS.encoding = "8UC1";
             memcpy(rosEROS.data.data(), yarpEROS.getRawImage(), yarpEROS.getRawImageSize());
             publisherPort_eros.write();
             // EV image
@@ -276,6 +277,7 @@ public:
             rosEVS.data.resize(yarpEVS.getRawImageSize());
             rosEVS.width = yarpEVS.width();
             rosEVS.height = yarpEVS.height();
+            rosEVS.encoding = "8UC1";
             memcpy(rosEVS.data.data(), yarpEVS.getRawImage(), yarpEVS.getRawImageSize());
             publisherPort_evs.write();
         }
