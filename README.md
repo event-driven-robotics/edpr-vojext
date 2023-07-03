@@ -38,6 +38,7 @@ The software was tested on Ubuntu 20.04.2 LTS
   - `--publish_f <INT>` to modify the rate images are published to ROS [30]
   - `--w <INT> --h <INT>` to set the dataset sensor resolution [640 480]
   - `--pu <FLOAT> --muD <FLOAT>` to set the Kalman filter process and measurement uncertainty [10, 1]
+  - `--vis <BOOL>` to see a visualisation of the algorithm
 
 To stop the application itself, the camera and the yarpserver, the follwoing command should be run in a temrinal inside the docker:
 ```shell 
