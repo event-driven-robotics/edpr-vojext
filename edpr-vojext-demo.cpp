@@ -47,14 +47,12 @@ public:
         input_port.close();
     }
 
-    bool update(const cv::Mat &latest_image, double latest_ts, hpecore::stampedPose &previous_skeleton)
+    bool update(cv::Mat &latest_image, double latest_ts, hpecore::stampedPose &previous_skeleton)
     {
         // send an update if the timer has elapsed
         if ((!waiting && latest_ts - tic > period) || (latest_ts - tic > 2.0))
         {
-            static cv::Mat cv_image;
-            cv::GaussianBlur(latest_image, cv_image, {5, 5}, -1);
-            output_port.prepare().copy(yarp::cv::fromCvMat<PixelMono>(cv_image));
+            output_port.prepare().copy(yarp::cv::fromCvMat<PixelMono>(latest_image));
             output_port.write();
             tic = latest_ts;
             waiting = true;
@@ -90,13 +88,14 @@ private:
 
     // velocity and fusion
     hpecore::multiJointLatComp state;
-    ev::EROS eros_handler;
+    hpecore::EROS eros_handler;
+    hpecore::SAE sae_handler;
+    hpecore::BIN binary_handler;
 
     // internal data structures
     hpecore::skeleton13 skeleton_detection{0};
 
     cv::Size image_size{640, 480};
-    cv::Mat vis_image;
     cv::Mat edpr_logo;
 
     // parameters
@@ -130,6 +129,8 @@ public:
         }
 
         eros_handler.init(image_size.width, image_size.height, 7, 0.3);
+        binary_handler.init(image_size.width, image_size.height);
+        sae_handler.init(image_size.width, image_size.height);
 
         // =====READ PARAMETERS=====
         double procU = rf.check("pu", Value(10)).asFloat64();
@@ -162,7 +163,6 @@ public:
         // ===== SET UP INTERNAL VARIABLE/DATA STRUCTURES =====
 
         // shared images
-        vis_image = cv::Mat(image_size, CV_8U, cv::Scalar(0));
         edpr_logo = cv::imread("/usr/local/src/edpr-vojext/edpr_logo.png");
 
         // fusion
@@ -247,38 +247,71 @@ public:
         return true;
     }
 
-    void drawEROS(cv::Mat img)
+    void drawEROS_MONO(cv::Mat &img)
+    {
+        eros_handler.getSurface().convertTo(img, CV_8U);
+        cv::GaussianBlur(img, img, {5, 5}, -1);
+    }
+
+    void drawEROS_RGB(cv::Mat img)
     {
         cv::Mat blurred_eros;
-        cv::GaussianBlur(eros_handler.getSurface(), blurred_eros, {5, 5}, -1);
+        drawEROS_MONO(blurred_eros);
         cv::cvtColor(blurred_eros, img, CV_GRAY2BGR);
+    }
 
+    void drawEVENTS_MONO(cv::Mat &img)
+    {
+        binary_handler.getSurface().convertTo(img, CV_8U);
+    }
+
+    void drawEVENTS_RGB(cv::Mat &img)
+    {
+        cv::Mat eventsmono;
+        drawEVENTS_MONO(eventsmono);
+        cv::cvtColor(eventsmono, img, CV_GRAY2BGR);
     }
 
     // synchronous thread
     bool updateModule() override
     {
-
         {
-            // EROS
+            static yarp::os::Stamp ystamp;
+            ystamp.update();
             cv::Mat temp;
-            cv::GaussianBlur(eros_handler.getSurface(), temp, {5, 5}, -1);
+
+            // EROS
+            drawEROS_MONO(temp);
             auto yarpEROS = yarp::cv::fromCvMat<yarp::sig::PixelMono>(temp);
             yarp::rosmsg::sensor_msgs::Image& rosEROS = publisherPort_eros.prepare();
             rosEROS.data.resize(yarpEROS.getRawImageSize());
             rosEROS.width = yarpEROS.width();
             rosEROS.height = yarpEROS.height();
             rosEROS.encoding = "8UC1";
+            rosEROS.step = yarpEROS.getRowSize();
+            rosEROS.is_bigendian = 0;
+            rosEROS.header.frame_id = "eros";
+            rosEROS.header.seq = ystamp.getCount();
+            rosEROS.header.stamp = ystamp.getTime();
             memcpy(rosEROS.data.data(), yarpEROS.getRawImage(), yarpEROS.getRawImageSize());
+            publisherPort_eros.setEnvelope(ystamp);
             publisherPort_eros.write();
+
             // EV image
-            auto yarpEVS = yarp::cv::fromCvMat<yarp::sig::PixelMono>(vis_image);
+            drawEVENTS_MONO(temp);
+            auto yarpEVS = yarp::cv::fromCvMat<yarp::sig::PixelMono>(temp);
             yarp::rosmsg::sensor_msgs::Image& rosEVS = publisherPort_evs.prepare();
             rosEVS.data.resize(yarpEVS.getRawImageSize());
             rosEVS.width = yarpEVS.width();
             rosEVS.height = yarpEVS.height();
             rosEVS.encoding = "8UC1";
+            rosEVS.step = yarpEVS.getRowSize();
+            rosEVS.is_bigendian = 0;
+            rosEVS.header.frame_id = "eventimage";
+            rosEVS.header.seq = ystamp.getCount();
+            rosEVS.header.stamp = ystamp.getTime();
             memcpy(rosEVS.data.data(), yarpEVS.getRawImage(), yarpEVS.getRawImageSize());
+            publisherPort_evs.setEnvelope(ystamp);
             publisherPort_evs.write();
         }
 
@@ -292,9 +325,9 @@ public:
             static cv::Mat canvas = cv::Mat(image_size, CV_8UC3, cv::Vec3b(0, 0, 0));
 
             if(show_eros)
-                drawEROS(canvas);
+                drawEROS_RGB(canvas);
             else
-                cv::cvtColor(vis_image, canvas, cv::COLOR_GRAY2BGR);
+                drawEVENTS_RGB(canvas);
 
             // plot skeletons
             hpecore::drawSkeleton(canvas, skeleton_detection, {0, 0, 255}, 3);
@@ -313,9 +346,7 @@ public:
             else if(key == 'e')
                 show_eros = !show_eros; 
         }
-        
-
-        vis_image.setTo(0);
+        binary_handler.getSurface().setTo(0);
         return true;
     }
 
@@ -327,7 +358,8 @@ public:
             tnow = stats.timestamp;
             for(auto &v : input_events) {
                 eros_handler.update(v.x, v.y);
-                vis_image.at<unsigned char>(v.y, v.x) = 255;
+                binary_handler.update(v.x, v.y);
+                sae_handler.update(v.x, v.y, tnow);
             }
         }
     }
@@ -338,7 +370,8 @@ public:
         while (!isStopping())
         {
         hpecore::stampedPose detected_pose;
-        bool was_detected = mn_handler.update(eros_handler.getSurface(), yarp::os::Time::now(), detected_pose);
+        cv::Mat eros8u; drawEROS_MONO(eros8u);
+        bool was_detected = mn_handler.update(eros8u, yarp::os::Time::now(), detected_pose);
 
         if(was_detected) {
             if(!state.poseIsInitialised())
