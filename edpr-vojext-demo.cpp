@@ -23,7 +23,7 @@ using std::vector;
 
 bool valid_skel(hpecore::stampedPose pose)
 {
-    float validity_threshold = 0.3;
+    float validity_threshold = 0.5;
     float skel_conf = (pose.conf[hpecore::head] + pose.conf[hpecore::shoulderR] + pose.conf[hpecore::shoulderL])/3;
     if (skel_conf>validity_threshold)
         return true;
