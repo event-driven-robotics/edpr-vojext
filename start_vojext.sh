@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "Run YARP server connected to ROS"
+yarp conf ${ROS_MASTER_URI:7:-6} 10000
 yarpserver --ros &
 sleep 1
 echo "Run ATIS-bridge"
