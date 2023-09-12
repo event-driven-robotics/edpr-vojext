@@ -14,7 +14,7 @@ Author: Franco Di Pietro, Arren Glover
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <string>
-#include "vojext_msgs/NC_humanPose.h"
+#include "sim_sem_msgs/NC_humanPose.h"
 #include <yarp/rosmsg/sensor_msgs/Image.h>
 
 using namespace yarp::os;
@@ -120,7 +120,7 @@ private:
 
     // ros 
     yarp::os::Node* ros_node{nullptr};
-    yarp::os::Publisher<yarp::rosmsg::NC_humanPose> ros_publisher;
+    yarp::os::Publisher<yarp::rosmsg::sim_sem_msgs::NC_humanPose> ros_publisher;
     typedef yarp::os::Publisher<yarp::rosmsg::sensor_msgs::Image> ImageTopicType;
     ImageTopicType publisherPort_eros, publisherPort_evs;
 
@@ -164,7 +164,7 @@ public:
         double procU = rf.check("pu", Value(10)).asFloat64();
         double measUD = rf.check("muD", Value(1)).asFloat64();
         
-        vis = rf.check("vis", Value(true)).asBool();
+        vis = rf.check("vis", Value(false)).asBool();
         p_vis = 1.0/std::max(rf.check("f_vis", Value(20.0)).asFloat64(), 5.0);
         p_det = 1.0/std::max(rf.check("f_det", Value(5.0)).asFloat64(), 1.0);
         p_vel = 1.0/std::max(rf.check("f_vel", Value(50)).asFloat64(), 1.0/p_det);
@@ -212,10 +212,11 @@ public:
         Network::connect("/zynqGrabber/AE:o", getName("/AE:i"), "fast_tcp");
         Network::connect(getName("/eros:o"), "/movenet/img:i", "fast_tcp");
         Network::connect("/file/atis/AE:o", getName("/AE:i"), "fast_tcp");
-    
 
-        cv::namedWindow("edpr-vojext", cv::WINDOW_NORMAL);
-        cv::resizeWindow("edpr-vojext", image_size);
+        if(vis) {
+            cv::namedWindow("edpr-vojext", cv::WINDOW_NORMAL);
+            cv::resizeWindow("edpr-vojext", image_size);
+        }
 
         // set-up ROS interface
 
@@ -430,7 +431,7 @@ public:
 
             { //ROS OUTPUT
                 // format skeleton to ros output
-                yarp::rosmsg::NC_humanPose& ros_output = ros_publisher.prepare();
+                yarp::rosmsg::sim_sem_msgs::NC_humanPose& ros_output = ros_publisher.prepare();
                 hpecore::skeleton13 pose = state.query();
                 ros_output.pose.resize(26);
                 ros_output.velocity.resize(26, 0.0);

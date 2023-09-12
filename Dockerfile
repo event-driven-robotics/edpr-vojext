@@ -25,7 +25,7 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python$PYTHO
     rm /usr/bin/python3 && \
     ln -s python$PYTHON_VERSION /usr/bin/python3
     
-RUN pip3 install numpy
+RUN pip3 install numpy~=1.21.4
 
 ##########
 # OPENCV C++ and Python
@@ -104,7 +104,9 @@ RUN cd $SOURCE_FOLDER && \
     cmake .. && make install -j$(nproc)
 
 # install movenet dependencies
-RUN python3 -m pip install -r $SOURCE_FOLDER/hpe-core/example/movenet/requirements.txt
+# RUN python3 -m pip install -r $SOURCE_FOLDER/hpe-core/example/movenet/requirements.txt
+RUN python3 -m pip install pandas==1.4.0 opencv-python~=4.5.5.62 torch~=1.10.2 torchvision==0.11.3 \
+    albumentations~=1.1.0 Pillow~=8.4.0 torchsummary~=1.5.1 onnxruntime tensorboard
 
 ENV PYTHONPATH "${PYTHONPATH}:$SOURCE_FOLDER/hpe-core"
     

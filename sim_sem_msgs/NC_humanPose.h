@@ -5,14 +5,14 @@
 
 // This is an automatically generated file.
 
-// Generated from the following "NC_humanPose" msg definition:
+// Generated from the following "sim_sem_msgs/NC_humanPose" msg definition:
 //   float64 timestamp
 //   float64[] pose
 //   float64[] velocity// Instances of this class can be read and written with YARP ports,
 // using a ROS-compatible format.
 
-#ifndef YARP_ROSMSG_NC_humanPose_h
-#define YARP_ROSMSG_NC_humanPose_h
+#ifndef YARP_ROSMSG_sim_sem_msgs_NC_humanPose_h
+#define YARP_ROSMSG_sim_sem_msgs_NC_humanPose_h
 
 #include <yarp/os/Wire.h>
 #include <yarp/os/Type.h>
@@ -22,6 +22,7 @@
 
 namespace yarp {
 namespace rosmsg {
+namespace sim_sem_msgs {
 
 class NC_humanPose : public yarp::os::idl::WirePortable
 {
@@ -168,11 +169,11 @@ public:
 
     // This class will serialize ROS style or YARP style depending on protocol.
     // If you need to force a serialization style, use one of these classes:
-    typedef yarp::os::idl::BareStyle<yarp::rosmsg::NC_humanPose> rosStyle;
-    typedef yarp::os::idl::BottleStyle<yarp::rosmsg::NC_humanPose> bottleStyle;
+    typedef yarp::os::idl::BareStyle<yarp::rosmsg::sim_sem_msgs::NC_humanPose> rosStyle;
+    typedef yarp::os::idl::BottleStyle<yarp::rosmsg::sim_sem_msgs::NC_humanPose> bottleStyle;
 
     // The name for this message, ROS will need this
-    static constexpr const char* typeName = "NC_humanPose";
+    static constexpr const char* typeName = "sim_sem_msgs/NC_humanPose";
 
     // The checksum for this message, ROS will need this
     static constexpr const char* typeChecksum = "f60fac524517d870dbaac768aeafa188";
@@ -193,7 +194,8 @@ float64[] velocity\n\
     }
 };
 
+} // namespace sim_sem_msgs
 } // namespace rosmsg
 } // namespace yarp
 
-#endif // YARP_ROSMSG_NC_humanPose_h
+#endif // YARP_ROSMSG_sim_sem_msgs_NC_humanPose_h
