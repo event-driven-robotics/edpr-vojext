@@ -153,7 +153,7 @@ public:
         double procU = rf.check("pu", Value(10)).asFloat64();
         double measUD = rf.check("muD", Value(1)).asFloat64();
         
-        vis = rf.check("vis", Value(true)).asBool();
+        vis = rf.check("vis", Value(false)).asBool();
         p_vis = 1.0/std::max(rf.check("f_vis", Value(20.0)).asFloat64(), 5.0);
         p_det = 1.0/std::max(rf.check("f_det", Value(5.0)).asFloat64(), 1.0);
         p_vel = 1.0/std::max(rf.check("f_vel", Value(50)).asFloat64(), 1.0/p_det);
@@ -201,10 +201,11 @@ public:
         Network::connect("/zynqGrabber/AE:o", getName("/AE:i"), "fast_tcp");
         Network::connect(getName("/eros:o"), "/movenet/img:i", "fast_tcp");
         Network::connect("/file/atis/AE:o", getName("/AE:i"), "fast_tcp");
-    
 
-        cv::namedWindow("edpr-vojext", cv::WINDOW_NORMAL);
-        cv::resizeWindow("edpr-vojext", image_size);
+        if(vis) {
+            cv::namedWindow("edpr-vojext", cv::WINDOW_NORMAL);
+            cv::resizeWindow("edpr-vojext", image_size);
+        }
 
         // set-up ROS interface
 
