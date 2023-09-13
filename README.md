@@ -25,7 +25,7 @@ The software was tested on Ubuntu 20.04.2 LTS
                -e DISPLAY=unix$DISPLAY -e ROS_MASTER_URI=http://172.17.0.1:11311 -e YARPSERVER_IP=172.17.0.1 \
                --name edpr-vojext-demo edpr-vojext
     ```
-:bulb: set the ROS_MASTER_URI variable and the YARP_IP as needed for your set-up
+:bulb: set the ROS_MASTER_URI variable and the YARPSERVER_IP as needed for your set-up
 
 - At the terminal inside the container run the following command to execute a script that will set up a yarpserver connected to ROS, run the atis-bridge to get the events from the camera and finally run the HPE application with a visualisation window. The application should automatically connect to required input and output YARP modules.
   ```shell 
