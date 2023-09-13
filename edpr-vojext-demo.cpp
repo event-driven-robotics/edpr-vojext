@@ -117,6 +117,7 @@ private:
     double p_vis{0.033}, p_img{0.2}, p_det{0.2}, p_vel{0.02};
     double tnow{0.0};
     bool vis{false};
+    bool high_confidence{true};
 
     // ros 
     yarp::os::Node* ros_node{nullptr};
@@ -328,7 +329,8 @@ public:
                 drawEVENTS_RGB(canvas);
 
             // plot skeletons
-            hpecore::drawSkeleton(canvas, state.query(), {0, 0, 255}, 3);
+            if (high_confidence)
+                hpecore::drawSkeleton(canvas, state.query(), {0, 0, 255}, 3);
 
             if (!edpr_logo.empty())
             {
@@ -410,7 +412,6 @@ public:
 
     void run_detection()
     {
-        bool is_valid = true;
         while (!isStopping())
         {
             Time::delay(p_vel);
@@ -418,13 +419,13 @@ public:
             bool was_detected = mn_handler.update(eros_handler.getSurface(), tnow, detected_pose);
             if(was_detected)
             {
-                is_valid = valid_skel(detected_pose);
+                high_confidence = valid_skel(detected_pose);
                 if(!state.poseIsInitialised())
                     state.set(detected_pose.pose, detected_pose.timestamp);
                 else
                     state.updateFromPosition(detected_pose.pose, detected_pose.timestamp);
             } 
-            if(!state.poseIsInitialised() || !is_valid) continue;
+            if(!state.poseIsInitialised() || !high_confidence) continue;
 
             auto jvs = velocitizer.multi_area_velocity(sae_handler.getSurface(), tnow, state.query(), 20);
             state.updateFromVelocity(jvs, tnow);
