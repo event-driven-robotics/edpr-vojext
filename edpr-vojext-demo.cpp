@@ -21,6 +21,7 @@ using namespace yarp::os;
 using namespace yarp::sig;
 using std::vector;
 
+
 class externalDetector
 {
 private:
@@ -67,6 +68,7 @@ public:
         if (mn_container)
         {
             previous_skeleton.pose = hpecore::extractSkeletonFromYARP<Bottle>(*mn_container);
+            previous_skeleton.conf = hpecore::extractConfidenceFromYARP<Bottle>(*mn_container);
             previous_skeleton.timestamp = tic;
             previous_skeleton.delay = latest_ts - tic;
             waiting = false;
@@ -106,6 +108,7 @@ private:
     double p_vis{0.033}, p_img{0.2}, p_det{0.2}, p_vel{0.02};
     double tnow{0.0};
     bool vis{false};
+    bool high_confidence{true};
 
     // ros 
     yarp::os::Node* ros_node{nullptr};
@@ -317,7 +320,8 @@ public:
                 drawEVENTS_RGB(canvas);
 
             // plot skeletons
-            hpecore::drawSkeleton(canvas, state.query(), {0, 0, 255}, 3);
+            if (high_confidence)
+                hpecore::drawSkeleton(canvas, state.query(), {0, 0, 255}, 3);
 
             if (!edpr_logo.empty())
             {
@@ -404,15 +408,15 @@ public:
             Time::delay(p_vel);
             hpecore::stampedPose detected_pose;
             bool was_detected = mn_handler.update(eros_handler.getSurface(), tnow, detected_pose);
-
-            if(was_detected) 
+            if(was_detected)
             {
+                high_confidence = hpecore::valid_skel(detected_pose);
                 if(!state.poseIsInitialised())
                     state.set(detected_pose.pose, detected_pose.timestamp);
                 else
                     state.updateFromPosition(detected_pose.pose, detected_pose.timestamp);
             } 
-            if(!state.poseIsInitialised()) continue;
+            if(!state.poseIsInitialised() || !high_confidence) continue;
 
             auto jvs = velocitizer.multi_area_velocity(sae_handler.getSurface(), tnow, state.query(), 20);
             state.updateFromVelocity(jvs, tnow);
