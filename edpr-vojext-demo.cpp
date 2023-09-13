@@ -342,7 +342,9 @@ public:
         if(!high_confidence) 
         {
             yarp::rosmsg::sim_sem_msgs::NC_humanPose& ros_output = ros_publisher.prepare();
+            ros_output.pose.clear();
             ros_output.pose.resize(26, -1.0);
+            ros_output.clear();
             ros_output.velocity.resize(26, -1.0);
             ros_output.timestamp = tnow;
             ros_publisher.write();
@@ -435,12 +437,15 @@ public:
                 // format skeleton to ros output
                 yarp::rosmsg::sim_sem_msgs::NC_humanPose& ros_output = ros_publisher.prepare();
                 hpecore::skeleton13 pose = state.query();
+                hpecore::skeleton13 vel = state.queryVelocity();
                 ros_output.pose.resize(26);
                 ros_output.velocity.resize(26, 0.0);
                 for (int j = 0; j < 13; j++)
                 {
                     ros_output.pose[j*2] = pose[j].u;
                     ros_output.pose[j*2+1] = pose[j].v;
+                    ros_output.velocity[j * 2] = vel[j].u;
+                    ros_output.velocity[j * 2 + 1] = vel[j].v;
                 }
                 ros_output.timestamp = tnow;
                 ros_publisher.write();
