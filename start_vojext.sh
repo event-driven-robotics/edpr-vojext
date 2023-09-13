@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "Run YARP server connected to ROS"
+yarp namespace /vojext
 yarp conf ${YARPSERVER_IP} 10000
 yarpserver --ros &
 sleep 1
