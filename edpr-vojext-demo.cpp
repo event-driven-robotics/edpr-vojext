@@ -21,15 +21,6 @@ using namespace yarp::os;
 using namespace yarp::sig;
 using std::vector;
 
-bool valid_skel(hpecore::stampedPose pose)
-{
-    float validity_threshold = 0.5;
-    float skel_conf = (pose.conf[hpecore::head] + pose.conf[hpecore::shoulderR] + pose.conf[hpecore::shoulderL])/3;
-    if (skel_conf>validity_threshold)
-        return true;
-    else
-        return false;
-}
 
 class externalDetector
 {
@@ -419,7 +410,7 @@ public:
             bool was_detected = mn_handler.update(eros_handler.getSurface(), tnow, detected_pose);
             if(was_detected)
             {
-                high_confidence = valid_skel(detected_pose);
+                high_confidence = hpecore::valid_skel(detected_pose);
                 if(!state.poseIsInitialised())
                     state.set(detected_pose.pose, detected_pose.timestamp);
                 else
