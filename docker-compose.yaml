@@ -1,0 +1,17 @@
+---
+services:
+  edpr:
+    container_name: edpr-vojext-demo5
+    image: edpr-vojext5
+    privileged: true
+    network_mode: host
+    volumes:
+      - /tmp/.X11-unix/:/tmp/.X11-unix
+      - /dev/bus/usb:/dev/bus/usb
+    environment:
+      DISPLAY: unix$DISPLAY
+      ROS_MASTER_URI: http://192.168.0.200:11311
+      ROS_HOSTNAME: 192.168.0.200
+      ROS_IP: 192.168.0.200
+      YARPSERVER_IP: 192.168.0.200
+    restart: always
