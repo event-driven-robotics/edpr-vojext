@@ -22,7 +22,7 @@ The software was tested on Ubuntu 20.04.2 LTS
     ```
     ```shell
     $ docker run -it --privileged --network host -v /tmp/.X11-unix/:/tmp/.X11-unix -v /dev/bus/usb:/dev/bus/usb \
-               -e DISPLAY=unix$DISPLAY -e ROS_MASTER_URI=http://172.17.0.1:11311 -e YARP_IP=172.17.0.1 \
+               -e DISPLAY=unix$DISPLAY -e ROS_MASTER_URI=http://172.17.0.1:11311 -e YARPSERVER_IP=172.17.0.1 \
                --name edpr-vojext-demo edpr-vojext
     ```
 :bulb: set the ROS_MASTER_URI variable and the YARP_IP as needed for your set-up
