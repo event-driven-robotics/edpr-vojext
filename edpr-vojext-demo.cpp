@@ -410,7 +410,7 @@ public:
             bool was_detected = mn_handler.update(eros_handler.getSurface(), tnow, detected_pose);
             if(was_detected)
             {
-                high_confidence = hpecore::valid_skel(detected_pose);
+                high_confidence = hpecore::testConfidence(detected_pose);
                 if(!state.poseIsInitialised())
                     state.set(detected_pose.pose, detected_pose.timestamp);
                 else
