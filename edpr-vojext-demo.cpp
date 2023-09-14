@@ -14,7 +14,7 @@ Author: Franco Di Pietro, Arren Glover
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <string>
-#include "sim_sem_msgs/NC_humanPose.h"
+#include "sim_sem_msgs/NChumanPose.h"
 #include <yarp/rosmsg/sensor_msgs/Image.h>
 
 using namespace yarp::os;
@@ -112,7 +112,7 @@ private:
 
     // ros 
     yarp::os::Node* ros_node{nullptr};
-    yarp::os::Publisher<yarp::rosmsg::sim_sem_msgs::NC_humanPose> ros_publisher;
+    yarp::os::Publisher<yarp::rosmsg::sim_sem_msgs::NChumanPose> ros_publisher;
     typedef yarp::os::Publisher<yarp::rosmsg::sensor_msgs::Image> ImageTopicType;
     ImageTopicType publisherPort_eros, publisherPort_evs;
 
@@ -341,7 +341,7 @@ public:
 
         if(!high_confidence) 
         {
-            yarp::rosmsg::sim_sem_msgs::NC_humanPose& ros_output = ros_publisher.prepare();
+            yarp::rosmsg::sim_sem_msgs::NChumanPose& ros_output = ros_publisher.prepare();
             ros_output.pose.clear();
             ros_output.pose.resize(26, -1.0);
             ros_output.velocity.clear();
@@ -435,7 +435,7 @@ public:
 
             { //ROS OUTPUT
                 // format skeleton to ros output
-                yarp::rosmsg::sim_sem_msgs::NC_humanPose& ros_output = ros_publisher.prepare();
+                yarp::rosmsg::sim_sem_msgs::NChumanPose& ros_output = ros_publisher.prepare();
                 hpecore::skeleton13 pose = state.query();
                 hpecore::skeleton13 vel = state.queryVelocity();
                 ros_output.pose.resize(26);
