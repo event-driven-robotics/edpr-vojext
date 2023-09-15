@@ -106,6 +106,7 @@ private:
 
     // parameters
     double p_vis{0.033}, p_img{0.2}, p_det{0.2}, p_vel{0.02};
+    double c_thresh{0.4};
     double tnow{0.0};
     bool vis{false};
     bool high_confidence{true};
@@ -130,6 +131,7 @@ public:
             yInfo() << "--f_img <float> : ROS image output rate [3]";
             yInfo() << "--pu <float>    : KF process uncertainty [10.0]";
             yInfo() << "--muD <float>   : KF measurement uncertainty [1.0]";
+            yInfo() << "--confidence <float> : threshold for skeleton confidence [0.4]";
             return false;
         }
         // =====SET UP YARP=====
@@ -164,7 +166,8 @@ public:
             p_img = 1.0/rf.check("f_img", Value(3.0)).asFloat64();
         else
             p_img = 0.0;
-        
+
+        c_thresh = rf.check("confidence", Value(0.4)).asFloat64();
 
         // run python code for movenet
         int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py &");
@@ -422,7 +425,7 @@ public:
             bool was_detected = mn_handler.update(eros_handler.getSurface(), tnow, detected_pose);
             if(was_detected)
             {
-                high_confidence = hpecore::testConfidence(detected_pose);
+                high_confidence = hpecore::testConfidence(detected_pose, c_thresh);
                 if(!state.poseIsInitialised())
                     state.set(detected_pose.pose, detected_pose.timestamp);
                 else
