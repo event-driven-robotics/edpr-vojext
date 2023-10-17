@@ -104,6 +104,7 @@ RUN cd $SOURCE_FOLDER && \
     cmake .. && make install -j$(nproc)
 
 # install movenet dependencies
+ENV PIP_DEFAULT_TIMEOUT=1200
 # RUN python3 -m pip install -r $SOURCE_FOLDER/hpe-core/example/movenet/requirements.txt
 RUN python3 -m pip install pandas==1.4.0 opencv-python~=4.5.5.62 torch~=1.10.2 torchvision==0.11.3 \
     albumentations~=1.1.0 Pillow~=8.4.0 torchsummary~=1.5.1 onnxruntime tensorboard
