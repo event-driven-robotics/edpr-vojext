@@ -101,6 +101,16 @@ class MovenetModule(yarp.RFModule):
         if not result:
             print(print(port, ' open?:', result))
         return result
+    def check_internal_ports(self):
+        if not yarp.Network.exists(self.getName() + "/img:i"):
+            if not self.input_port.open(self.getName() + "/img:i"):
+                print("Could not open input port")
+                return False
+        if not yarp.Network.exists(self.getName() + "/sklt:o"):
+            if not self.output_port.open(self.getName() + "/sklt:o"):
+                print("Could not open output port")
+                return False
+        return True
 
     def test_and_connect(self):
         count = 0
@@ -115,8 +125,13 @@ class MovenetModule(yarp.RFModule):
             sleep(1)
         while not self.check_external_port(output_ext):
             sleep(1)
-        print('Ports open. Checking connections...')
-
+        print('External ports are open. ',
+              'Checking internal ports')
+        while not self.check_internal_ports():
+            sleep(2)
+            print("Trying to open internal ports")
+        print("internal ports are open.")
+        print('Checking connections...')
         print("yarp.Network.isConnected('/edpr_vojext/eros:o', '/movenet/img:i'): ", yarp.Network.isConnected('/edpr_vojext/eros:o', '/movenet/img:i'))
         print("yarp.Network.isConnected('/movenet/sklt:o', '/edpr_vojext/movenet:i'): ", yarp.Network.isConnected('/movenet/sklt:o', '/edpr_vojext/movenet:i'))
         if not (yarp.Network.isConnected('/edpr_vojext/eros:o', '/movenet/img:i')):
@@ -165,9 +180,10 @@ class MovenetModule(yarp.RFModule):
             # self.yarp_image_out.setExternal(np_output.data, np_output.shape[1], np_output.shape[0])
 
             # Read the image
-            read_image = self.input_port.read()
+            read_image = self.input_port.read(False)
             if read_image is None:
-                return False
+                sleep(1)
+                return True
             self.input_port.getEnvelope(self.stamp)
             # stamp_in = self.stamp.getTime()
             stamp_in = self.stamp.getCount() + self.stamp.getTime()
