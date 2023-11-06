@@ -224,14 +224,14 @@ class MovenetModule(yarp.RFModule):
             # print('Conf:', pre['confidence'])
             print('After concatenation: ', np.concatenate((pre['joints'], pre['confidence'])))
             # out = np.reshape(np.concatenate((np.reshape(pre['joints'],[-1,2]), np.reshape(pre['confidence'],[-1,1])), axis=1),[-1])
-            # img = add_skeleton(input_image, out, (0, 0, 255), lines=True, normalised=False,
-            #                      th=cfg['confidence_th'], confidence=cfg['confidence'], text=cfg['text'], upper=cfg['upper'])
-            # # img = image_show(input_image, pre=pre['joints'])
-            # cv2.imshow('', img)
-            # if dev:
-            #     k = cv2.waitKey(100)
-            # else:
-            #     k = cv2.waitKey(1)
+            img = add_skeleton(input_image, pre['joints'], (0, 0, 255), lines=True, normalised=False,
+                                 th=cfg['confidence_th'], confidence=cfg['confidence'], text=cfg['text'], upper=cfg['upper'])
+            # img = image_show(input_image, pre=pre['joints'])
+            cv2.imshow('', img)
+            if dev:
+                k = cv2.waitKey(100)
+            else:
+                k = cv2.waitKey(1)
 
         # latency
         t1 = datetime.datetime.now()
