@@ -15,5 +15,4 @@ services:
       ROS_IP: 192.168.0.200
       YARPSERVER_IP: 192.168.0.200
     restart: always
-    working_dir: /usr/local/src/edpr-vojext
-    command: sh -c "./start_vojext.sh; bash"
+    command: sh -c "python3 /usr/local/src/edpr_vojext/movenet_vojext.py; bash"

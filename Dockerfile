@@ -125,4 +125,4 @@ RUN rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
 
 WORKDIR $SOURCE_FOLDER
 
-CMD /bin/bash -c "/usr/local/src/edpr-vojext/start_vojext.sh"
+#CMD /bin/bash -c "/usr/local/src/edpr-vojext/start_vojext.sh"
