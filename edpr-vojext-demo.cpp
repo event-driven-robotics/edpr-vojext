@@ -248,7 +248,7 @@ public:
             thread_rosimg = std::thread([this]{ this->run_rosimg(); });
 
         yInfo() << "Parameters: [DET VEL VIS IMG CONF]";
-        yInfo() << "[" << (int)(1/p_det) << (int)(1/p_vel) << (int)(1/p_vis) << (int)(rf.check("f_img", Value(3.0)).asFloat64()) << c_thresh << "]"
+        yInfo() << "[" << (int)(1/p_det) << (int)(1/p_vel) << (int)(1/p_vis) << (int)(rf.check("f_img", Value(3.0)).asFloat64()) << c_thresh << "]";
         return true;
     }
 
