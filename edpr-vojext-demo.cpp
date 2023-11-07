@@ -170,15 +170,15 @@ public:
         c_thresh = rf.check("confidence", Value(0.4)).asFloat64();
 
         // run python code for movenet
-//        int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py &");
-//        while (!yarp::os::NetworkBase::exists("/movenet/sklt:o"))
-//            sleep(1);
-//        yInfo() << "MoveEnet started correctly";
-//
-//        FILE* pipe = popen("pgrep -f movenet_online", "r");
-//        killline = "kill "; killline.resize(32);
-//        char * k = fgets(killline.data()+5, killline.size()-5, pipe);
-//        yInfo() << killline;
+       int r = system("python3 /usr/local/src/hpe-core/example/movenet/movenet_online.py &");
+       while (!yarp::os::NetworkBase::exists("/movenet/sklt:o"))
+           sleep(1);
+       yInfo() << "MoveEnet started correctly";
+
+       FILE* pipe = popen("pgrep -f movenet_online", "r");
+       killline = "kill "; killline.resize(32);
+       char * k = fgets(killline.data()+5, killline.size()-5, pipe);
+       yInfo() << killline;
 
 
         if (!mn_handler.init(getName("/eros:o"), getName("/movenet:i"), p_det))
