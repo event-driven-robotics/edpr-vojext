@@ -21,6 +21,7 @@ services:
       P_CAMS: 60
       P_CAMF: 0.1
       P_CAML: 2
+      P_CONF: 0.4
     restart: always
     working_dir: /usr/local/src/edpr-vojext
     command: sh -c "./start_vojext.sh; bash"
