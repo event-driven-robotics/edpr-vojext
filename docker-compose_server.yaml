@@ -18,6 +18,7 @@ services:
       P_VISF: 1
       P_VELF: 50
       P_IMGF: 10
+      P_CONF: 0.4
     restart: always
     working_dir: /usr/local/src/edpr-vojext
     command: sh -c "./start_server.sh; bash"
