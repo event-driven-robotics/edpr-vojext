@@ -6,7 +6,7 @@ yarp conf ${YARPSERVER_IP} 10000
 yarpserver --ros &
 sleep 1
 echo "Run ATIS-bridge"
-atis-bridge-sdk --s 60 --filter 0.01 --limit 2 &
+atis-bridge-sdk --s ${P_CAMS} --filter ${P_CAMF} --limit ${P_CAML} &
 sleep 5
 echo "Run EDPR-VOJEXT application"
-edpr-vojext-demo --vis false --f_det 1 --f_vis 1 --confidence 0.4
+edpr-vojext-demo --vis false --f_det ${P_DETF} --f_vis ${P_VISF} --f_vel ${P_VELF} --f_img ${P_IMGF} --confidence ${P_CONF}
