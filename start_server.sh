@@ -7,5 +7,5 @@ yarp detect
 sleep 5
 echo "Run EDPR-VOJEXT application"
 edpr-vojext-demo --vis false --f_det ${P_DETF} --f_vis ${P_VISF} --f_vel ${P_VELF} --f_img ${P_IMGF} --confidence ${P_CONF} &
-sleep 1
-python3 /usr/local/src/edpr-vojext/movenet_vojext.py
+#sleep 1
+#python3 /usr/local/src/edpr-vojext/movenet_vojext.py
