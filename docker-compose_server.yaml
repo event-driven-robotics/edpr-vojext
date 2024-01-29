@@ -5,6 +5,7 @@ services:
     image: edpr-vojext
     privileged: true
     network_mode: host
+    gpus: all
     volumes:
       - /tmp/.X11-unix/:/tmp/.X11-unix
       - /dev/bus/usb:/dev/bus/usb
@@ -19,6 +20,7 @@ services:
       P_VELF: 50
       P_IMGF: 10
       P_CONF: 0.4
+      B_VIS: false
     restart: always
     working_dir: /usr/local/src/edpr-vojext
     command: sh -c "./start_server.sh; bash"

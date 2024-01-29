@@ -106,6 +106,7 @@ private:
 
     // parameters
     double p_vis{0.033}, p_img{0.2}, p_det{0.2}, p_vel{0.02};
+    int m_vis{0}, m_img{0}, m_det{0}, m_vel{0};
     double c_thresh{0.4};
     double tnow{0.0};
     bool vis{false};
@@ -341,7 +342,18 @@ public:
             else if(key == 'e')
                 show_eros = !show_eros; 
         }
-        binary_handler.getSurface().setTo(0);
+        if(!(p_img > 0.0))
+            binary_handler.getSurface().setTo(0);
+        static int p_rate = 1.0/p_vis;
+        static int ii = 0;
+        if(ii++ > p_rate) {
+            yInfo() << "Detection:"<<(int)(m_det) << "/" << (int)(1.0/p_det)
+                    << "Velocity:"<<(int)(m_vel) << "/" << (int)(1.0/p_vel)
+                    <<"ROS-img output:"<<(int)(m_img) << "/" << (int)(1.0/p_img)
+                    <<"Vis:"<<(int)(p_rate) << "/" << (int)(p_rate);
+            m_det = m_vel = m_img = m_vis = 0;
+            ii = 0;
+        }
 
         if(!high_confidence) 
         {
@@ -399,6 +411,8 @@ public:
             publisherPort_evs.setEnvelope(ystamp);
             publisherPort_evs.write();
 
+            binary_handler.getSurface().setTo(0);
+            m_img++;
             Time::delay(p_img);
         }
     }
@@ -421,6 +435,7 @@ public:
     {
         while (!isStopping())
         {
+            m_vel++;
             Time::delay(p_vel);
             hpecore::stampedPose detected_pose;
             bool was_detected = mn_handler.update(eros_handler.getSurface(), tnow, detected_pose);
@@ -431,7 +446,8 @@ public:
                     state.set(detected_pose.pose, detected_pose.timestamp);
                 else
                     state.updateFromPosition(detected_pose.pose, detected_pose.timestamp);
-            } 
+                m_det++;
+            }
             if(!state.poseIsInitialised() || !high_confidence) continue;
 
             auto jvs = velocitizer.multi_area_velocity(sae_handler.getSurface(), tnow, state.query(), 20);

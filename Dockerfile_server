@@ -10,6 +10,7 @@ RUN apt install -y build-essential
 RUN apt install -y cmake git openssh-client git
 RUN apt install -y ffmpeg libcanberra-gtk-module mesa-utils
 RUN apt install -y libboost-program-options-dev libeigen3-dev swig psmisc
+RUN apt install -y vim
 
 ##########
 # PYTHON & PIP #
@@ -114,7 +115,7 @@ ENV PYTHONPATH "${PYTHONPATH}:$SOURCE_FOLDER/hpe-core"
 # VOJEXT demo
 
 RUN cd $SOURCE_FOLDER && \
-    git clone --branch main https://github.com/event-driven-robotics/edpr-vojext.git && \
+    git clone --branch offboard https://github.com/event-driven-robotics/edpr-vojext.git && \
     cd edpr-vojext && mkdir build && cd build && \
     cmake .. && make install -j$(nproc)
     
