@@ -107,8 +107,9 @@ RUN cd $SOURCE_FOLDER && \
 # install movenet dependencies
 ENV PIP_DEFAULT_TIMEOUT=1200
 # RUN python3 -m pip install -r $SOURCE_FOLDER/hpe-core/example/movenet/requirements.txt
-RUN python3 -m pip install pandas==1.4.0 opencv-python~=4.5.5.62 torch~=1.10.2 torchvision==0.11.3 \
-    albumentations~=1.1.0 Pillow~=8.4.0 torchsummary~=1.5.1 onnxruntime tensorboard
+RUN python3 -m pip install pandas opencv-python torch torchvision albumentations Pillow torchsummary onnxruntime tensorboard
+#RUN python3 -m pip install pandas==1.4.0 opencv-python~=4.5.5.62 torch~=1.10.2 torchvision==0.11.8 \
+#    albumentations~=1.1.0 Pillow~=10.2.0 torchsummary~=1.5.1 onnxruntime tensorboard
 
 ENV PYTHONPATH "${PYTHONPATH}:$SOURCE_FOLDER/hpe-core"
     
@@ -122,6 +123,8 @@ RUN cd $SOURCE_FOLDER && \
 RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/99local.conf && ldconfig
 
 RUN chmod +x $SOURCE_FOLDER/edpr-vojext/start_server.sh
+
+RUN apt install -y vim
     
 RUN apt autoremove && apt clean
 RUN rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
