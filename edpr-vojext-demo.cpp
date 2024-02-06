@@ -384,7 +384,7 @@ public:
             rosEROS.data.resize(yarpEROS.getRawImageSize());
             rosEROS.width = yarpEROS.width();
             rosEROS.height = yarpEROS.height();
-            rosEROS.encoding = "8UC1";
+            rosEROS.encoding = "mono8";
             rosEROS.step = yarpEROS.getRowSize();
             rosEROS.is_bigendian = 0;
             rosEROS.header.frame_id = "eros";
@@ -401,7 +401,7 @@ public:
             rosEVS.data.resize(yarpEVS.getRawImageSize());
             rosEVS.width = yarpEVS.width();
             rosEVS.height = yarpEVS.height();
-            rosEVS.encoding = "8UC1";
+            rosEVS.encoding = "mono8";
             rosEVS.step = yarpEVS.getRowSize();
             rosEVS.is_bigendian = 0;
             rosEVS.header.frame_id = "eventimage";
