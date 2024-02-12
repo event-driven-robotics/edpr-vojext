@@ -112,7 +112,7 @@ RUN cd $SOURCE_FOLDER && \
 # VOJEXT demo
 
 RUN cd $SOURCE_FOLDER && \
-    git clone --branch offboard https://github.com/event-driven-robotics/edpr-vojext.git
+    git clone --branch main https://github.com/event-driven-robotics/edpr-vojext.git
     #cd edpr-vojext && mkdir build && cd build && \
     #cmake .. && make install -j$(nproc)
     
