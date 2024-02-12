@@ -14,14 +14,9 @@ services:
       ROS_HOSTNAME: 192.168.0.200
       ROS_IP: 192.168.0.200
       YARPSERVER_IP: 192.168.0.200
-      P_DETF: 10
-      P_VISF: 1
-      P_VELF: 50
-      P_IMGF: 10
       P_CAMS: 60
       P_CAMF: 0.1
       P_CAML: 2
-      P_CONF: 0.4
     restart: always
     working_dir: /usr/local/src/edpr-vojext
-    command: sh -c "./start_vojext.sh; bash"
+    command: sh -c "./start_robot.sh; bash"

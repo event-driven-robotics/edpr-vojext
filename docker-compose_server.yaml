@@ -5,6 +5,7 @@ services:
     image: edpr-vojext
     privileged: true
     network_mode: host
+    gpus: all
     volumes:
       - /tmp/.X11-unix/:/tmp/.X11-unix
       - /dev/bus/usb:/dev/bus/usb
@@ -14,5 +15,12 @@ services:
       ROS_HOSTNAME: 192.168.0.200
       ROS_IP: 192.168.0.200
       YARPSERVER_IP: 192.168.0.200
+      P_DETF: 10
+      P_VISF: 1
+      P_VELF: 50
+      P_IMGF: 10
+      P_CONF: 0.4
+      B_VIS: false
     restart: always
-    command: sh -c "python3 /usr/local/src/edpr_vojext/movenet_vojext.py; bash"
+    working_dir: /usr/local/src/edpr-vojext
+    command: sh -c "./start_server.sh; bash"
